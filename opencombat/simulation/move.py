@@ -1,0 +1,114 @@
+# coding: utf-8
+import time
+import typing
+
+from synergine2.simulation import SubjectComposedBehaviour, SubjectBehaviour
+from synergine2.simulation import BehaviourStep
+from synergine2.simulation import Event
+
+
+# class MoveWithRotationBehaviour(SubjectComposedBehaviour):
+#     step_classes = [
+#
+#     ]
+from synergine2_xyz.utils import get_angle
+
+
+class SubjectStartRotationEvent(Event):
+    def __init__(
+        self,
+        rotate_relative: float,
+        duration: float,
+    ) -> None:
+        self.rotate_relative = rotate_relative
+        self.duration = duration
+
+
+class SubjectFinishRotationEvent(Event):
+    pass
+
+
+class SubjectStartMoveEvent(Event):
+    def __init__(
+        self,
+        move_to: typing.Tuple(int, int),
+        duration: float,
+    ) -> None:
+        self.move_to = move_to
+        self.duration = duration
+
+
+class MoveWithRotationBehaviour(SubjectBehaviour):
+    def run(self, data) -> object:
+        from_ = data['from']  # type: typing.Tuple(int, int)
+        to = data['to']  # type: typing.Tuple(int, int)
+        path = data['path']  # type: typing.List[typing.Tuple(int, int)]
+        path_index = path.index(self.subject.position)
+        data = {}
+
+        # Test if finish move
+        if path_index == len(path) - 1:
+            raise NotImplementedError('Code it, move finished')
+
+        # Prepare data
+        next_position = path[path_index + 1]
+
+        # Test if need rotation
+        next_position_direction = get_angle(self.subject.position, next_position)
+        if self.subject.direction != next_position_direction:
+            # Check if rotation is in process
+            if self.subject.rotate_to == next_position_direction:
+                # If it is not finished
+                now = time.time()
+                if self.subject.start_rotation + self.subject.rotate_duration < now:
+                    # Let rotation do it's job
+                    return None
+                else:
+                    # rotation finish
+                    data['rotation_finished'] = True
+
+            return {
+                'rotate_relative': next_position_direction - self.subject.direction,
+                'rotate_absolute': next_position_direction,
+            }
+
+        # Begin or finish move
+        # compete data dict
+        # TODO: manage if movement is in process / finished
+        return {
+            'begin_move_to': next_position,
+        }
+
+    def action(self, data) -> [Event]:
+        events = []
+
+        if data.get('rotate_relative'):
+            duration = self.subject.get_rotate_duration(angle=data['rotate_relative'])
+            self.subject.rotate_to = data['rotate_absolute']
+            self.subject.rotate_duration = duration
+            self.subject.start_rotation = time.time()
+
+            return [SubjectStartRotationEvent(
+                rotate_relative=data['rotate_relative'],
+                duration=duration,
+            )]
+
+        if data.get('rotation_finished'):
+            self.subject.rotate_to = None
+            self.subject.rotate_duration = 0
+            self.subject.start_rotation = 0
+            events.append(SubjectFinishRotationEvent())
+
+        if data.get('begin_move_to'):
+            duration = self.subject.walk_duration
+            self.subject.moving_to = data['begin_move_to']
+            # TODO: duration must be computed
+            self.subject.move_duration = duration
+            self.subject.start_move = time.time()
+            events.append(SubjectStartMoveEvent(
+                move_to=data['begin_move_to'],
+                duration=duration,
+            ))
+            return events
+
+        raise NotImplementedError('This case not managed yet')
