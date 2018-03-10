@@ -34,13 +34,13 @@ class TileSubject(BaseSubject):
     behaviour_selector_class = TileBehaviourSelector
 
     direction = shared.create_self('direction', 0)
-    moving_to = shared.create_self('moving_to', (0, 0))
-    move_duration = shared.create_self('move_duration', 0)
-    start_move = shared.create_self('start_move', 0)
+    moving_to = shared.create_self('moving_to', (-1, -1))
+    move_duration = shared.create_self('move_duration', -1)
+    start_move = shared.create_self('start_move', -1)
 
-    rotate_to = shared.create_self('rotate_to', 0.0)
-    rotate_duration = shared.create_self('rotate_duration', 0.0)
-    start_rotation = shared.create_self('start_rotation', 0.0)
+    rotate_to = shared.create_self('rotate_to', -1)
+    rotate_duration = shared.create_self('rotate_duration', -1)
+    start_rotation = shared.create_self('start_rotation', -1)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

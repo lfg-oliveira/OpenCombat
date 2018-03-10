@@ -31,7 +31,7 @@ class SubjectFinishRotationEvent(Event):
 class SubjectStartMoveEvent(Event):
     def __init__(
         self,
-        move_to: typing.Tuple(int, int),
+        move_to: typing.Tuple[int, int],
         duration: float,
     ) -> None:
         self.move_to = move_to
@@ -52,21 +52,20 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
 
         # Prepare data
         next_position = path[path_index + 1]
+        now = time.time()
 
         # Test if need rotation
         next_position_direction = get_angle(self.subject.position, next_position)
-        if self.subject.direction != next_position_direction:
-            # Check if rotation is in process
-            if self.subject.rotate_to == next_position_direction:
-                # If it is not finished
-                now = time.time()
-                if self.subject.start_rotation + self.subject.rotate_duration < now:
-                    # Let rotation do it's job
-                    return None
-                else:
-                    # rotation finish
-                    data['rotation_finished'] = True
 
+        # Check if rotation is in process
+        if self.subject.rotate_to == next_position_direction:
+            # If it is not finished
+            if self.subject.start_rotation + self.subject.rotate_duration > now:
+                # Let rotation do it's job
+                return None
+            # rotation finish
+            data['rotation_finished'] = True
+        elif self.subject.direction != next_position_direction:
             return {
                 'rotate_relative': next_position_direction - self.subject.direction,
                 'rotate_absolute': next_position_direction,
@@ -75,9 +74,19 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
         # Begin or finish move
         # compete data dict
         # TODO: manage if movement is in process / finished
-        return {
-            'begin_move_to': next_position,
-        }
+
+        # Subject is moving
+        if self.subject.moving_to == next_position:
+            if self.subject.start_move + self.subject.move_duration > now:
+                # Let moving
+                return None
+            data['move_finished'] = True
+            # TODO: Can start here a new move or rotation !
+            raise NotImplementedError('TODO')
+
+        # else start a move
+        data['begin_move_to'] = next_position
+        return data
 
     def action(self, data) -> [Event]:
         events = []
@@ -94,9 +103,9 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
             )]
 
         if data.get('rotation_finished'):
-            self.subject.rotate_to = None
-            self.subject.rotate_duration = 0
-            self.subject.start_rotation = 0
+            self.subject.rotate_to = -1
+            self.subject.rotate_duration = -1
+            self.subject.start_rotation = -1
             events.append(SubjectFinishRotationEvent())
 
         if data.get('begin_move_to'):
@@ -110,5 +119,9 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 duration=duration,
             ))
             return events
+
+        if data.get('move_finished'):
+            # TODO: Can start here a new move or rotation !
+            raise NotImplementedError('TODO')
 
         raise NotImplementedError('This case not managed yet')

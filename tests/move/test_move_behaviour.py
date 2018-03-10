@@ -8,7 +8,7 @@ from synergine2_xyz.simulation import XYZSimulation
 from synergine2_xyz.subjects import XYZSubject
 
 from opencombat.simulation.move import MoveWithRotationBehaviour, \
-    SubjectStartRotationEvent, SubjectStartMoveEvent
+    SubjectStartRotationEvent, SubjectStartMoveEvent, SubjectFinishRotationEvent
 from opencombat.simulation.subject import TankSubject
 
 
@@ -36,8 +36,8 @@ def test_move_behaviour__begin_rotate(config):
         ],
     }
 
+    # Rotation required to begin move
     with freeze_time("2000-01-01 00:00:00", tz_offset=0):
-        # First run, rotation required
         data = move_behaviour.run(intention_data)
         assert {
             'rotate_relative': 45,
@@ -55,30 +55,32 @@ def test_move_behaviour__begin_rotate(config):
         assert subject.rotate_to == 45
         assert subject.start_rotation == 946684800.0
 
-    # Note: this is 1 second before end of rotation
+    # This is 1 second before end of rotation
     with freeze_time("2000-01-01 00:00:04", tz_offset=0):
         data = move_behaviour.run(intention_data)
         assert not data
 
-    # Note: We are now just after rotation duration
+    # We are now just after rotation duration, a move will start
     with freeze_time("2000-01-01 00:00:05", tz_offset=0):
         data = move_behaviour.run(intention_data)
         assert {
-            'making_move_to': (1, 1),
+            'begin_move_to': (1, 1),
+            'rotation_finished': True,
         } == data
 
         events = move_behaviour.action(data)
-        assert 1 == len(events)
-        assert isinstance(events[0], SubjectStartMoveEvent)
-        assert (1, 1) == events[0].making_move_to
-        assert 4.9995 == events[0].duration
+        assert 2 == len(events)
+        assert isinstance(events[1], SubjectStartMoveEvent)
+        assert isinstance(events[0], SubjectFinishRotationEvent)
+        assert (1, 1) == events[1].move_to
+        assert 9.0 == events[1].duration
         assert subject.position == (0, 0)
-        assert subject.direction == 0
-        assert subject.rotate_to == 45
-        assert subject.start_rotation == 946684800.0
+        assert subject.moving_to == (1, 1)
+        assert subject.move_duration == 9.0
+        assert subject.start_move == 946684805.0
 
-    # Second run, waiting rotation finished
-    # note: that's subject who own rotation infos
+    # We are during the move
+    # We are after the move
 
 
 def test_move_behaviour__begin_move(config):
