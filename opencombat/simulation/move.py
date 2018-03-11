@@ -40,6 +40,19 @@ class SubjectStartMoveEvent(Event):
 
 class MoveWithRotationBehaviour(SubjectBehaviour):
     def run(self, data) -> object:
+        """
+        FIXME: implement this:
+        1. if it is end of movement: return move_to_finished: x, y
+        2. if it is moving:
+          2a: not finished: return moving_to: x, y
+          2b: finished: fee data with tile_move_to_finished: x, y
+        3. if it is rotating:
+          3a: not finished: return rotate_to: x
+          3b: finished: feed data with rotate_to_finished: x
+        4. if next move need rotation: feed data with rotate_to: x, return data
+        5. feed data with tile_move_to: x, y
+
+        """
         from_ = data['from']  # type: typing.Tuple(int, int)
         to = data['to']  # type: typing.Tuple(int, int)
         path = data['path']  # type: typing.List[typing.Tuple(int, int)]
