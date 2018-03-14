@@ -53,6 +53,16 @@ class SubjectStartTileMoveEvent(Event):
         self.duration = duration
 
 
+class SubjectContinueTileMoveEvent(Event):
+    def __init__(
+        self,
+        move_to: typing.Tuple[int, int],
+        duration: float,
+    ) -> None:
+        self.move_to = move_to
+        self.duration = duration
+
+
 class SubjectFinishTileMoveEvent(Event):
     def __init__(
         self,
@@ -113,7 +123,7 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
         # Test if finish move
         if path_index == len(path) - 1:
             return {
-                'move_finished': to,
+                'move_to_finished': to,
             }
 
         # Check if moving
@@ -121,9 +131,21 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
             if self.subject.start_move + self.subject.move_duration > now:
                 # Let moving
                 return {
-                    'tile_moving_to': next_position,
+                    'tile_move_to': next_position,
                 }
             return_data['tile_move_to_finished'] = self.subject.moving_to
+            # Must consider new position of subject
+            path_index = path.index(return_data['tile_move_to_finished'])
+            if path_index == len(path) - 1:
+                return {
+                    'move_to_finished': to,
+                }
+            next_position = path[path_index + 1]
+            next_position_direction = get_angle(
+                return_data['tile_move_to_finished'],
+                next_position,
+            )
+            rotate_relative = next_position_direction - self.subject.direction
 
         # Check if rotating
         if self.subject.rotate_to != -1:
@@ -138,10 +160,11 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
             return_data['rotate_to_finished'] = self.subject.rotate_to
 
         # Check if need to rotate
-        if self.subject.direction != next_position_direction:
+        if not return_data.get('rotate_to_finished') \
+                and self.subject.direction != next_position_direction:
             return_data.update({
-                'start_rotate_relative': rotate_relative,
-                'start_rotate_absolute': next_position_direction,
+                'rotate_relative': rotate_relative,
+                'rotate_absolute': next_position_direction,
             })
             return return_data
 
@@ -151,6 +174,7 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
 
     def action(self, data) -> [Event]:
         events = []
+        now = time.time()
 
         if data.get('path'):
             move = self.subject.intentions.get(MoveToIntention)
@@ -159,27 +183,21 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
 
         if data.get('tile_move_to_finished'):
             self.subject.position = data['tile_move_to_finished']
+            self.subject.moving_to = (-1, -1)
+            self.subject.start_move = -1
+            self.subject.move_duration = -1
             events.append(SubjectFinishTileMoveEvent(
                 move_to=data['tile_move_to_finished'],
             ))
 
         if data.get('move_to_finished'):
             self.subject.position = data['move_to_finished']
+            self.subject.moving_to = (-1, -1)
+            self.subject.start_move = -1
+            self.subject.move_duration = -1
+            self.subject.intentions.remove(MoveToIntention)
             events.append(SubjectFinishMoveEvent(
                 move_to=data['move_to_finished'],
-            ))
-
-        if data.get('start_rotate_relative'):
-            duration = self.subject.get_rotate_duration(
-                angle=data['start_rotate_relative'],
-            )
-            self.subject.rotate_to = data['start_rotate_absolute']
-            self.subject.rotate_duration = duration
-            self.subject.start_rotation = time.time()
-
-            events.append(SubjectStartRotationEvent(
-                rotate_relative=data['start_rotate_relative'],
-                duration=duration,
             ))
 
         if data.get('rotate_to_finished'):
@@ -188,31 +206,62 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
             self.subject.start_rotation = -1
             self.subject.direction = data['rotate_to_finished']
 
-            return events.append(SubjectFinishRotationEvent(
+            events.append(SubjectFinishRotationEvent(
                 rotation_absolute=data['rotate_to_finished'],
             ))
 
         if data.get('rotate_relative'):
-            duration = self.subject.get_rotate_duration(angle=data['rotate_relative'])
-            self.subject.rotate_to = data['rotate_absolute']
-            self.subject.rotate_duration = duration
-            self.subject.start_rotation = time.time()
-            # FIXME: we not have info about actuel direction
+            # Test if rotation is already started
+            if self.subject.rotate_to == data['rotate_absolute']:
+                # look at progression
+                rotate_since = now - self.subject.start_rotation
+                rotate_progress = rotate_since / self.subject.rotate_duration
+                rotation_to_do = self.subject.rotate_to - self.subject.direction
+                rotation_done = rotation_to_do * rotate_progress
+                self.subject.direction = self.subject.direction + rotation_done
+                rotation_left = self.subject.rotate_to - self.subject.direction
+                duration = self.subject.get_rotate_duration(angle=rotation_left)
+                self.subject.rotate_duration = duration
+                self.subject.start_rotation = now
 
-            return [SubjectContinueRotationEvent(
-                rotate_relative=data['rotate_relative'],
-                duration=duration,
-            )]
+                return [SubjectContinueRotationEvent(
+                    rotate_relative=rotation_left,
+                    duration=duration,
+                )]
+            else:
+                duration = self.subject.get_rotate_duration(angle=data['rotate_relative'])
+                self.subject.rotate_to = data['rotate_absolute']
+                self.subject.rotate_duration = duration
+                self.subject.start_rotation = time.time()
+
+                events.append(SubjectStartRotationEvent(
+                    rotate_relative=data['rotate_relative'],
+                    duration=duration,
+                ))
 
         if data.get('tile_move_to'):
-            # TODO: duration must be computed
-            duration = self.subject.walk_duration
-            self.subject.moving_to = data['tile_move_to']
-            self.subject.move_duration = duration
-            self.subject.start_move = time.time()
-            events.append(SubjectStartTileMoveEvent(
-                move_to=data['tile_move_to'],
-                duration=duration,
-            ))
+            # It is already moving ?
+            if self.subject.moving_to == data.get('tile_move_to'):
+                # look at progression
+                move_since = now - self.subject.start_move
+                move_progress = move_since / self.subject.move_duration
+                move_done = self.subject.move_duration * move_progress
+                duration = self.subject.move_duration - move_done
+                self.subject.move_duration = duration
+
+                return [SubjectContinueTileMoveEvent(
+                    move_to=data['tile_move_to'],
+                    duration=duration,
+                )]
+            else:
+                # TODO: duration must be computed for move mode
+                duration = self.subject.walk_duration
+                self.subject.moving_to = data['tile_move_to']
+                self.subject.move_duration = duration
+                self.subject.start_move = time.time()
+                events.append(SubjectStartTileMoveEvent(
+                    move_to=data['tile_move_to'],
+                    duration=duration,
+                ))
 
         return events

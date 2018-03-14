@@ -34,7 +34,7 @@ class TileSubject(BaseSubject):
     behaviour_selector_class = TileBehaviourSelector
 
     direction = shared.create_self('direction', 0)
-    moving_to = shared.create_self('moving_to', (0, 0))
+    moving_to = shared.create_self('moving_to', (-1, -1))
     move_duration = shared.create_self('move_duration', -1)
     start_move = shared.create_self('start_move', -1)
 
