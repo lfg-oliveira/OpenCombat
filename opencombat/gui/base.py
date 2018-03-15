@@ -269,6 +269,7 @@ class Game(TMXGui):
         new_world_position = self.layer_manager.grid_manager.get_world_position_of_grid_position(event.to_position)
         actor_mode = actor.get_mode_for_gui_action(event.gui_action)
 
+        # FIXME: move duration must depend tile type
         if event.gui_action == UserAction.ORDER_MOVE:
             animation = ANIMATION_WALK
             cycle_duration = 2

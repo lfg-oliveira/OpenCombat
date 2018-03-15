@@ -244,6 +244,7 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 move = self.subject.intentions.get(MoveToIntention)
                 move_type_duration = self.subject.get_move_duration(move)
                 # FIXME: duration depend next tile type, etc
+                # see opencombat.gui.base.Game#start_move_subject
                 duration = move_type_duration * 1
                 self.subject.moving_to = data['tile_move_to']
                 self.subject.move_duration = duration
