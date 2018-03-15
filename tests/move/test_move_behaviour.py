@@ -13,6 +13,7 @@ from opencombat.simulation.move import SubjectStartTileMoveEvent
 from opencombat.simulation.move import SubjectContinueTileMoveEvent
 from opencombat.simulation.move import SubjectFinishTileMoveEvent
 from opencombat.simulation.subject import TankSubject
+from opencombat.user_action import UserAction
 
 
 def test_move_behaviour__begin_rotate(config):
@@ -26,7 +27,7 @@ def test_move_behaviour__begin_rotate(config):
         position=(0, 0),
     )
     move = MoveToIntention(
-        gui_action='SOME_GUI_ACTION',
+        gui_action=UserAction.ORDER_MOVE,
         from_=(0, 0),
         move_to=(2, 1),
         # FIXME: When new move algo, remove this parameter

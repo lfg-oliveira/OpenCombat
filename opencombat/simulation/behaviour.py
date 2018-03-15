@@ -34,6 +34,7 @@ class MoveToBehaviour(BaseMoveToBehaviour):
             'Gui action {} unknown'.format(move_to_data['gui_action'])
         )
 
+    # FIXME remove this func when code with new move
     def get_move_duration(self, move_to_data: dict) -> float:
         if move_to_data['gui_action'] == UserAction.ORDER_MOVE:
             return self.subject.walk_duration

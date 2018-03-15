@@ -2,16 +2,10 @@
 import time
 import typing
 
-from synergine2.simulation import SubjectComposedBehaviour, SubjectBehaviour
-from synergine2.simulation import BehaviourStep
+from synergine2.simulation import SubjectBehaviour
 from synergine2.simulation import Event
-
-
-# class MoveWithRotationBehaviour(SubjectComposedBehaviour):
-#     step_classes = [
-#
-#     ]
 from synergine2_xyz.move.intention import MoveToIntention
+from synergine2_xyz.simulation import XYZSimulation
 from synergine2_xyz.utils import get_angle
 
 
@@ -80,20 +74,13 @@ class SubjectFinishMoveEvent(Event):
 
 
 class MoveWithRotationBehaviour(SubjectBehaviour):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.simulation = typing.cast(XYZSimulation, self.simulation)
+
     def run(self, data) -> object:
         """
-        FIXME: implement this:
-        1. if it is end of movement: return move_to_finished: x, y
-        1bis: if first start: feed data with computed path
-        2. if it is moving:
-          2a: not finished: return moving_to: x, y
-          2b: finished: fee data with tile_move_to_finished: x, y
-        3. if it is rotating:
-          3a: not finished: return rotate_to: x
-          3b: finished: feed data with rotate_to_finished: x
-        4. if next move need rotation: feed data with rotate_to: x, return data
-        5. feed data with tile_move_to: x, y
-
+        Comptue data relative to move
         """
         # Prepare data
         from_ = data['from']  # type: typing.Tuple(int, int)
@@ -254,8 +241,10 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                     duration=duration,
                 )]
             else:
-                # TODO: duration must be computed for move mode
-                duration = self.subject.walk_duration
+                move = self.subject.intentions.get(MoveToIntention)
+                move_type_duration = self.subject.get_move_duration(move)
+                # FIXME: duration depend next tile type, etc
+                duration = move_type_duration * 1
                 self.subject.moving_to = data['tile_move_to']
                 self.subject.move_duration = duration
                 self.subject.start_move = time.time()

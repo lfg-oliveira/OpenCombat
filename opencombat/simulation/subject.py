@@ -1,7 +1,10 @@
 # coding: utf-8
 import typing
 
-from synergine2.simulation import SubjectBehaviourSelector, SubjectBehaviour
+from synergine2.simulation import SubjectBehaviourSelector
+from synergine2.simulation import SubjectBehaviour
+from opencombat.user_action import UserAction
+from synergine2_xyz.move.intention import MoveToIntention
 
 from opencombat.const import COLLECTION_ALIVE
 from opencombat.const import COMBAT_MODE_DEFENSE
@@ -56,18 +59,41 @@ class TileSubject(BaseSubject):
 
     @property
     def run_duration(self) -> float:
+        """
+        :return: move to tile time (s) when running
+        """
         return self._run_ref_time * self.global_move_coeff
 
     @property
     def walk_duration(self) -> float:
+        """
+        :return: move to tile time (s) when walking
+        """
         return self._walk_ref_time * self.global_move_coeff
 
     @property
     def crawl_duration(self) -> float:
+        """
+        :return: move to tile time (s) when crawling
+        """
         return self._crawl_ref_time * self.global_move_coeff
 
     def get_rotate_duration(self, angle: float) -> float:
         return angle * self._rotate_ref_time
+
+    def get_move_duration(self, move: MoveToIntention) -> float:
+        gui_action = move.gui_action
+
+        if gui_action == UserAction.ORDER_MOVE:
+            return self.walk_duration
+        if gui_action == UserAction.ORDER_MOVE_FAST:
+            return self.run_duration
+        if gui_action == UserAction.ORDER_MOVE_CRAWL:
+            return self.crawl_duration
+
+        raise NotImplementedError(
+            'Gui action {} unknown'.format(move.gui_action)
+        )
 
 
 class ManSubject(TileSubject):
