@@ -255,3 +255,121 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 ))
 
         return events
+
+
+class MoveBehaviour(SubjectBehaviour):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.simulation = typing.cast(XYZSimulation, self.simulation)
+
+    def run(self, data) -> object:
+        """
+        Comptue data relative to move
+        """
+        # Prepare data
+        from_ = data['from']  # type: typing.Tuple(int, int)
+        to = data['to']  # type: typing.Tuple(int, int)
+        return_data = {}
+        now = time.time()
+
+        # Test if it's first time
+        if not data.get('path'):
+            return_data['path'] = self.simulation.physics.found_path(
+                start=self.subject.position,
+                end=to,
+                subject=self.subject,
+            )
+            # find path algorithm can skip start position, add it if not in
+            if return_data['path'][0] != self.subject.position:
+                return_data['path'] = [self.subject.position] + return_data['path']
+            data['path'] = return_data['path']
+
+        # Prepare data
+        path = data['path']  # type: typing.List[typing.Tuple(int, int)]
+        path_index = path.index(self.subject.position)
+        next_position = path[path_index + 1]
+
+        # Test if finish move
+        if path_index == len(path) - 1:
+            return {
+                'move_to_finished': to,
+            }
+
+        # Check if moving
+        if self.subject.moving_to == next_position:
+            if self.subject.start_move + self.subject.move_duration > now:
+                # Let moving
+                return {
+                    'tile_move_to': next_position,
+                }
+            return_data['tile_move_to_finished'] = self.subject.moving_to
+            # Must consider new position of subject
+            path_index = path.index(return_data['tile_move_to_finished'])
+            if path_index == len(path) - 1:
+                return {
+                    'move_to_finished': to,
+                }
+            next_position = path[path_index + 1]
+
+        # Need to move to next tile
+        return_data['tile_move_to'] = next_position
+        return return_data
+
+    def action(self, data) -> [Event]:
+        events = []
+        now = time.time()
+
+        if data.get('path'):
+            move = self.subject.intentions.get(MoveToIntention)
+            move.path = data['path']
+            self.subject.intentions.set(move)
+
+        if data.get('tile_move_to_finished'):
+            self.subject.position = data['tile_move_to_finished']
+            self.subject.moving_to = (-1, -1)
+            self.subject.start_move = -1
+            self.subject.move_duration = -1
+            events.append(SubjectFinishTileMoveEvent(
+                move_to=data['tile_move_to_finished'],
+            ))
+
+        if data.get('move_to_finished'):
+            self.subject.position = data['move_to_finished']
+            self.subject.moving_to = (-1, -1)
+            self.subject.start_move = -1
+            self.subject.move_duration = -1
+            self.subject.intentions.remove(MoveToIntention)
+            events.append(SubjectFinishMoveEvent(
+                move_to=data['move_to_finished'],
+            ))
+
+        if data.get('tile_move_to'):
+            # It is already moving ?
+            if self.subject.moving_to == data.get('tile_move_to'):
+                # look at progression
+                move_since = now - self.subject.start_move
+                move_progress = move_since / self.subject.move_duration
+                move_done = self.subject.move_duration * move_progress
+                duration = self.subject.move_duration - move_done
+                self.subject.move_duration = duration
+                self.subject.start_move = time.time()
+
+                return [SubjectContinueTileMoveEvent(
+                    move_to=data['tile_move_to'],
+                    duration=duration,
+                )]
+            else:
+                move = self.subject.intentions.get(MoveToIntention)
+                move_type_duration = self.subject.get_move_duration(move)
+                # FIXME: duration depend next tile type, etc
+                # see opencombat.gui.base.Game#start_move_subject
+                duration = move_type_duration * 1
+                self.subject.moving_to = data['tile_move_to']
+                self.subject.move_duration = duration
+                self.subject.start_move = time.time()
+                events.append(SubjectStartTileMoveEvent(
+                    move_to=data['tile_move_to'],
+                    duration=duration,
+                ))
+
+        return events
