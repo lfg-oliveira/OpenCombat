@@ -9,7 +9,8 @@ from synergine2_xyz.move.intention import MoveToIntention
 from opencombat.const import COLLECTION_ALIVE
 from opencombat.const import COMBAT_MODE_DEFENSE
 from opencombat.simulation.base import BaseSubject
-from opencombat.simulation.behaviour import MoveToBehaviour
+from opencombat.simulation.move import MoveBehaviour
+from opencombat.simulation.move import MoveWithRotationBehaviour
 from opencombat.simulation.behaviour import EngageOpponent
 from opencombat.simulation.behaviour import LookAroundBehaviour
 from synergine2.share import shared
@@ -28,10 +29,10 @@ class TileSubject(BaseSubject):
         COLLECTION_ALIVE,
     ]
     behaviours_classes = [
-        MoveToBehaviour,
+        MoveBehaviour,
         LookAroundBehaviour,
         EngageOpponent,
-    ]
+    ]  # type: typing.List[SubjectBehaviour]
     visible_opponent_ids = shared.create_self('visible_opponent_ids', lambda: [])
     combat_mode = shared.create_self('combat_mode', COMBAT_MODE_DEFENSE)
     behaviour_selector_class = TileBehaviourSelector
@@ -101,6 +102,12 @@ class ManSubject(TileSubject):
 
 
 class TankSubject(TileSubject):
+    behaviours_classes = list(TileSubject.behaviours_classes)
+    behaviours_classes.remove(MoveBehaviour)
+    behaviours_classes.extend([
+        MoveWithRotationBehaviour,
+    ])
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         # TODO BS 2018-01-26: This coeff will be dependent of real

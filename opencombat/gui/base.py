@@ -33,8 +33,7 @@ from synergine2_cocos2d.gui import SubjectMapper
 from synergine2_cocos2d.gui import Gui
 from synergine2_cocos2d.gui import TMXGui
 from synergine2_cocos2d.layer import LayerManager
-from synergine2_xyz.move.simulation import FinishMoveEvent
-from synergine2_xyz.move.simulation import StartMoveEvent
+from opencombat.simulation import move
 from synergine2_xyz.physics import Physics
 from synergine2_xyz.utils import get_angle
 from opencombat.simulation.event import NewVisibleOpponent
@@ -203,12 +202,20 @@ class Game(TMXGui):
         self.debug_gui = self.config.resolve('global.debug_gui', False)
 
         self.terminal.register_event_handler(
-            FinishMoveEvent,
+            move.SubjectFinishTileMoveEvent,
+            self.set_subject_position,
+        )
+        self.terminal.register_event_handler(
+            move.SubjectFinishMoveEvent,
+            self.set_subject_position,
+        )
+        self.terminal.register_event_handler(
+            move.SubjectContinueTileMoveEvent,
             self.set_subject_position,
         )
 
         self.terminal.register_event_handler(
-            StartMoveEvent,
+            move.SubjectStartTileMoveEvent,
             self.start_move_subject,
         )
 
@@ -257,14 +264,22 @@ class Game(TMXGui):
         self.layer_manager.interaction_manager.register(MoveCrawlActorInteraction, self.layer_manager)
         self.layer_manager.interaction_manager.register(FireActorInteraction, self.layer_manager)
 
-    def set_subject_position(self, event: FinishMoveEvent):
+    def set_subject_position(
+        self,
+        event: typing.Union[move.SubjectFinishMoveEvent, move.SubjectFinishTileMoveEvent]
+    ):
+        # FIXME NOW: adapt to new events
         actor = self.layer_manager.subject_layer.subjects_index[event.subject_id]
         new_world_position = self.layer_manager.grid_manager.get_world_position_of_grid_position(event.to_position)
 
         actor.stop_actions((BaseMoveTo,))
         actor.set_position(*new_world_position)
 
-    def start_move_subject(self, event: StartMoveEvent):
+    def start_move_subject(
+        self,
+        event: typing.Union[move.SubjectFinishTileMoveEvent, move.SubjectContinueTileMoveEvent, move.SubjectFinishMoveEvent],  # nopep8
+    ):
+        # FIXME NOW: adapt to new events
         actor = self.layer_manager.subject_layer.subjects_index[event.subject_id]
         new_world_position = self.layer_manager.grid_manager.get_world_position_of_grid_position(event.to_position)
         actor_mode = actor.get_mode_for_gui_action(event.gui_action)

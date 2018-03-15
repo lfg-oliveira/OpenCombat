@@ -2,7 +2,7 @@
 import time
 import typing
 
-from synergine2.simulation import SubjectBehaviour
+from synergine2.simulation import SubjectBehaviour, SubjectMechanism
 from synergine2.simulation import Event
 from synergine2_xyz.move.intention import MoveToIntention
 from synergine2_xyz.simulation import XYZSimulation
@@ -82,6 +82,9 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
         """
         Comptue data relative to move
         """
+        if not data:
+            return False
+
         # Prepare data
         from_ = data['from']  # type: typing.Tuple(int, int)
         to = data['to']  # type: typing.Tuple(int, int)
@@ -266,6 +269,9 @@ class MoveBehaviour(SubjectBehaviour):
         """
         Comptue data relative to move
         """
+        if not data:
+            return False
+
         # Prepare data
         from_ = data['from']  # type: typing.Tuple(int, int)
         to = data['to']  # type: typing.Tuple(int, int)
@@ -373,3 +379,14 @@ class MoveBehaviour(SubjectBehaviour):
                 ))
 
         return events
+
+
+class MoveToMechanism(SubjectMechanism):
+    def run(self) -> dict:
+        try:
+            # TODO: MoveToIntention doit être configurable
+            move = self.subject.intentions.get(MoveToIntention)  # type: MoveToIntention
+        except KeyError:
+            return {}
+
+        return move.get_data()
