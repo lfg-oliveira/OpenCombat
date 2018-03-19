@@ -8,6 +8,7 @@ from synergine2_xyz.move.intention import MoveToIntention
 from synergine2_xyz.simulation import XYZSimulation
 from synergine2_xyz.utils import get_angle
 
+from opencombat.const import COLLECTION_ALIVE
 from opencombat.user_action import UserAction
 
 
@@ -111,6 +112,9 @@ class MoveToMechanism(SubjectMechanism):
         except KeyError:
             return {}
 
+        if COLLECTION_ALIVE not in self.subject.collections:
+            return {}
+
         return move.get_data()
 
 
@@ -123,13 +127,13 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
 
     def run(self, data) -> object:
         """
-        Comptue data relative to move
+        Compute data relative to move
         """
+        data = data[MoveToMechanism]
         if not data:
             return False
 
         # Prepare data
-        from_ = data['from']  # type: typing.Tuple(int, int)
         to = data['to']  # type: typing.Tuple(int, int)
         return_data = {}
         now = time.time()
@@ -332,8 +336,9 @@ class MoveBehaviour(SubjectBehaviour):
 
     def run(self, data) -> object:
         """
-        Comptue data relative to move
+        Compute data relative to move
         """
+        data = data[MoveToMechanism]
         if not data:
             return False
 

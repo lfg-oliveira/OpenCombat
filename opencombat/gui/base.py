@@ -17,6 +17,8 @@ from synergine2_cocos2d.interaction import InteractionManager
 from synergine2_cocos2d.middleware import MapMiddleware
 from synergine2_cocos2d.util import PathManager
 
+from opencombat.gui.animation import ANIMATION_WALK
+from opencombat.gui.animation import ANIMATION_CRAWL
 from opencombat.gui.fire import GuiFiringEvent
 from opencombat.simulation.interior import InteriorManager
 from opencombat.simulation.tmx import TileMap
@@ -207,10 +209,6 @@ class Game(TMXGui):
             move.SubjectFinishMoveEvent,
             self.set_subject_position,
         )
-        self.terminal.register_event_handler(
-            move.SubjectContinueTileMoveEvent,
-            self.set_subject_position,
-        )
 
         self.terminal.register_event_handler(
             move.SubjectStartTileMoveEvent,
@@ -283,14 +281,29 @@ class Game(TMXGui):
             .grid_manager\
             .get_world_position_of_grid_position(event.move_to)
 
-        animation = event.gui_action
-        # FIXME: cycle duration != move_duration ?
-        cycle_duration = event.duration
+        # FIXME BS 20180319: compute/config for cycle duration? ?
+        if event.gui_action == UserAction.ORDER_MOVE:
+            animation = ANIMATION_WALK
+            cycle_duration = 2
+        elif event.gui_action == UserAction.ORDER_MOVE_FAST:
+            animation = ANIMATION_WALK
+            cycle_duration = 0.5
+        elif event.gui_action == UserAction.ORDER_MOVE_CRAWL:
+            animation = ANIMATION_CRAWL
+            cycle_duration = 2
+        else:
+            raise NotImplementedError(
+                'Gui action {} unknown'.format(event.gui_action)
+            )
 
         move_duration = event.duration
         move_action = MoveTo(new_world_position, move_duration)
         actor.do(move_action)
-        actor.do(Animate(animation, duration=move_duration, cycle_duration=0.1))
+        actor.do(Animate(
+            animation,
+            duration=move_duration,
+            cycle_duration=cycle_duration,
+        ))
         actor.rotation = get_angle(actor.subject.position, event.move_to)
         actor.mode = actor.get_mode_for_gui_action(animation)
 

@@ -28,11 +28,6 @@ class TileSubject(BaseSubject):
     start_collections = [
         COLLECTION_ALIVE,
     ]
-    behaviours_classes = [
-        MoveBehaviour,
-        LookAroundBehaviour,
-        EngageOpponent,
-    ]  # type: typing.List[SubjectBehaviour]
     visible_opponent_ids = shared.create_self('visible_opponent_ids', lambda: [])
     combat_mode = shared.create_self('combat_mode', COMBAT_MODE_DEFENSE)
     behaviour_selector_class = TileBehaviourSelector
@@ -98,15 +93,19 @@ class TileSubject(BaseSubject):
 
 
 class ManSubject(TileSubject):
-    pass
+    behaviours_classes = [
+        MoveBehaviour,
+        LookAroundBehaviour,
+        EngageOpponent,
+    ]  # type: typing.List[SubjectBehaviour]
 
 
 class TankSubject(TileSubject):
-    behaviours_classes = list(TileSubject.behaviours_classes)
-    behaviours_classes.remove(MoveBehaviour)
-    behaviours_classes.extend([
+    behaviours_classes = [
         MoveWithRotationBehaviour,
-    ])
+        LookAroundBehaviour,
+        EngageOpponent,
+    ]  # type: typing.List[SubjectBehaviour]
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

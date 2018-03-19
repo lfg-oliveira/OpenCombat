@@ -5,6 +5,7 @@ from synergine2_xyz.move.intention import MoveToIntention
 from synergine2_xyz.simulation import XYZSimulation
 
 from opencombat.simulation.move import MoveWithRotationBehaviour
+from opencombat.simulation.move import MoveToMechanism
 from opencombat.simulation.move import MoveBehaviour
 from opencombat.simulation.move import SubjectFinishMoveEvent
 from opencombat.simulation.move import SubjectStartRotationEvent
@@ -29,7 +30,6 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
         position=(0, 0),
     )
     move = MoveToIntention(
-        from_=(0, 0),
         to=(2, 1),
         gui_action=UserAction.ORDER_MOVE,
     )
@@ -43,8 +43,9 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
 
     # Rotation required to begin move
     with freeze_time("2000-01-01 00:00:00", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+            'gui_action': UserAction.ORDER_MOVE,'gui_action': UserAction.ORDER_MOVE,
             'path': [
                 (0, 0),
                 (1, 1),
@@ -69,10 +70,11 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
 
     # This is 1 second before end of rotation
     with freeze_time("2000-01-01 00:00:04", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-           'rotate_relative': 45,
-           'rotate_absolute': 45,
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'rotate_relative': 45,
+                   'rotate_absolute': 45,
         } == data
 
         events = move_behaviour.action(data)
@@ -89,10 +91,11 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
 
     # We are now just after rotation duration, a move will start
     with freeze_time("2000-01-01 00:00:05", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-            'tile_move_to': (1, 1),
-            'rotate_to_finished': 45,
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'tile_move_to': (1, 1),
+                   'rotate_to_finished': 45,
         } == data
 
         events = move_behaviour.action(data)
@@ -109,9 +112,10 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
 
     # We are during the move
     with freeze_time("2000-01-01 00:00:13", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-            'tile_move_to': (1, 1),
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'tile_move_to': (1, 1),
         } == data
 
         events = move_behaviour.action(data)
@@ -123,11 +127,12 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
 
     # We are after the move
     with freeze_time("2000-01-01 00:00:14", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-            'tile_move_to_finished': (1, 1),
-            'rotate_relative': 45,
-            'rotate_absolute': 90,
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'tile_move_to_finished': (1, 1),
+                   'rotate_relative': 45,
+                   'rotate_absolute': 90,
         } == data
 
         events = move_behaviour.action(data)
@@ -148,10 +153,11 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
 
     # We are rotating
     with freeze_time("2000-01-01 00:00:18", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-            'rotate_relative': 45,
-            'rotate_absolute': 90,
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'rotate_relative': 45,
+                   'rotate_absolute': 90,
         } == data
 
         events = move_behaviour.action(data)
@@ -168,10 +174,11 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
 
     # We finish rotating and start to move to final tile
     with freeze_time("2000-01-01 00:00:19", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-            'tile_move_to': (2, 1),
-            'rotate_to_finished': 90,
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'tile_move_to': (2, 1),
+                   'rotate_to_finished': 90,
         } == data
 
         events = move_behaviour.action(data)
@@ -188,9 +195,10 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
 
     # We are moving to final tile
     with freeze_time("2000-01-01 00:00:27", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-           'tile_move_to': (2, 1),
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'tile_move_to': (2, 1),
         } == data
 
         events = move_behaviour.action(data)
@@ -202,9 +210,10 @@ def test_move_and_rotate_behaviour__begin_rotate(config):
 
     # We arrived on final tile
     with freeze_time("2000-01-01 00:00:28", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-           'move_to_finished': (2, 1),
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'move_to_finished': (2, 1),
         } == data
 
         events = move_behaviour.action(data)
@@ -230,7 +239,6 @@ def test_move_and_rotate_behaviour__begin_move(config):
         position=(0, 0),
     )
     move = MoveToIntention(
-        from_=(0, 0),
         to=(1, 1),
         gui_action=UserAction.ORDER_MOVE,
     )
@@ -244,8 +252,9 @@ def test_move_and_rotate_behaviour__begin_move(config):
 
     # First is a move
     with freeze_time("2000-01-01 00:00:00", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'path': [
                        (0, 0),
                        (0, 1),
@@ -263,8 +272,9 @@ def test_move_and_rotate_behaviour__begin_move(config):
 
     # Continue the move, rest 1s
     with freeze_time("2000-01-01 00:00:08", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'tile_move_to': (0, 1),
                } == data
 
@@ -277,8 +287,9 @@ def test_move_and_rotate_behaviour__begin_move(config):
 
     # Tile move finished, begin a rotate
     with freeze_time("2000-01-01 00:00:09", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'tile_move_to_finished': (0, 1),
                    'rotate_relative': 90,
                    'rotate_absolute': 90,
@@ -302,8 +313,9 @@ def test_move_and_rotate_behaviour__begin_move(config):
 
     # We are rotating, rest 1s
     with freeze_time("2000-01-01 00:00:18", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'rotate_relative': 90,
                    'rotate_absolute': 90,
                } == data
@@ -322,8 +334,9 @@ def test_move_and_rotate_behaviour__begin_move(config):
 
     # We finish rotating and start to move to final tile
     with freeze_time("2000-01-01 00:00:19", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'tile_move_to': (1, 1),
                    'rotate_to_finished': 90,
                } == data
@@ -342,8 +355,9 @@ def test_move_and_rotate_behaviour__begin_move(config):
 
     # Continue the move, rest 1s
     with freeze_time("2000-01-01 00:00:27", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'tile_move_to': (1, 1),
                } == data
 
@@ -359,9 +373,10 @@ def test_move_and_rotate_behaviour__begin_move(config):
 
     # We arrived on final tile
     with freeze_time("2000-01-01 00:00:28", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-           'move_to_finished': (1, 1),
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'move_to_finished': (1, 1),
         } == data
 
         events = move_behaviour.action(data)
@@ -387,7 +402,6 @@ def test_move_behaviour(config):
         position=(0, 0),
     )
     move = MoveToIntention(
-        from_=(0, 0),
         to=(1, 1),
         gui_action=UserAction.ORDER_MOVE,
     )
@@ -401,8 +415,9 @@ def test_move_behaviour(config):
 
     # First begin move
     with freeze_time("2000-01-01 00:00:00", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'path': [
                        (0, 0),
                        (0, 1),
@@ -420,8 +435,9 @@ def test_move_behaviour(config):
 
     # Continue the move, rest 1s
     with freeze_time("2000-01-01 00:00:02", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'tile_move_to': (0, 1),
                } == data
 
@@ -434,8 +450,9 @@ def test_move_behaviour(config):
 
     # Tile move finished, begin a new move
     with freeze_time("2000-01-01 00:00:03", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'tile_move_to_finished': (0, 1),
                    'tile_move_to': (1, 1),
                } == data
@@ -455,8 +472,9 @@ def test_move_behaviour(config):
 
     # We are moving, rest 1s
     with freeze_time("2000-01-01 00:00:05", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
+                   'gui_action': UserAction.ORDER_MOVE,
                    'tile_move_to': (1, 1),
                } == data
 
@@ -473,9 +491,10 @@ def test_move_behaviour(config):
 
     # We arrived on final tile
     with freeze_time("2000-01-01 00:00:06", tz_offset=0):
-        data = move_behaviour.run(move.get_data())
+        data = move_behaviour.run({MoveToMechanism: move.get_data()})
         assert {
-           'move_to_finished': (1, 1),
+                   'gui_action': UserAction.ORDER_MOVE,
+                   'move_to_finished': (1, 1),
         } == data
 
         events = move_behaviour.action(data)
