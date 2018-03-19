@@ -17,11 +17,13 @@ class SubjectStartRotationEvent(Event):
         self,
         subject_id: int,
         rotate_relative: float,
+        rotate_absolute: float,
         duration: float,
         gui_action: UserAction,
     ) -> None:
         self.subject_id = subject_id
         self.rotate_relative = rotate_relative
+        self.rotate_absolute = rotate_absolute
         self.duration = duration
         self.gui_action = gui_action
 
@@ -288,6 +290,7 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 events.append(SubjectStartRotationEvent(
                     subject_id=self.subject.id,
                     rotate_relative=data['rotate_relative'],
+                    rotate_absolute=data['rotate_absolute'],
                     duration=duration,
                     gui_action=data['gui_action'],
                 ))

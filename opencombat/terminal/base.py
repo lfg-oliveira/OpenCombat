@@ -19,8 +19,9 @@ class CocosTerminal(GameTerminal):
     subscribed_events = [
         move.SubjectFinishTileMoveEvent,
         move.SubjectFinishMoveEvent,
-        move.SubjectContinueTileMoveEvent,
         move.SubjectStartTileMoveEvent,
+        move.SubjectStartRotationEvent,
+        move.SubjectFinishRotationEvent,
         NewVisibleOpponent,
         NoLongerVisibleOpponent,
         FireEvent,

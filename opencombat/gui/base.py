@@ -12,6 +12,7 @@ from PIL import Image
 from pyglet.window import key
 
 from cocos.actions import MoveTo as BaseMoveTo
+from cocos.actions import MoveTo as RotateTo
 from synergine2_cocos2d.audio import AudioLibrary as BaseAudioLibrary
 from synergine2_cocos2d.interaction import InteractionManager
 from synergine2_cocos2d.middleware import MapMiddleware
@@ -216,6 +217,16 @@ class Game(TMXGui):
         )
 
         self.terminal.register_event_handler(
+            move.SubjectStartRotationEvent,
+            self.start_rotate_subject,
+        )
+
+        self.terminal.register_event_handler(
+            move.SubjectFinishRotationEvent,
+            self.rotate_subject,
+        )
+
+        self.terminal.register_event_handler(
             NewVisibleOpponent,
             self.new_visible_opponent,
         )
@@ -304,8 +315,18 @@ class Game(TMXGui):
             duration=move_duration,
             cycle_duration=cycle_duration,
         ))
-        actor.rotation = get_angle(actor.subject.position, event.move_to)
+        if actor.can_rotate_instant():
+            actor.rotation = get_angle(actor.subject.position, event.move_to)
         actor.mode = actor.get_mode_for_gui_action(animation)
+
+    def start_rotate_subject(self, event: move.SubjectStartRotationEvent):
+        actor = self.layer_manager.subject_layer.subjects_index[event.subject_id]
+        rotate_action = RotateTo(event.rotate_absolute, event.duration)
+        actor.do(rotate_action)
+
+    def rotate_subject(self, event: move.SubjectFinishRotationEvent):
+        actor = self.layer_manager.subject_layer.subjects_index[event.subject_id]
+        actor.rotation = event.rotation_absolute
 
     def new_visible_opponent(self, event: NewVisibleOpponent):
         self.visible_or_no_longer_visible_opponent(event, (153, 0, 153))
