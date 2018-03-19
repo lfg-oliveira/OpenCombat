@@ -24,8 +24,6 @@ from opencombat.user_action import UserAction
 from synergine2.config import Config
 from synergine2.terminals import Terminal
 from synergine2_cocos2d.actions import MoveTo
-from opencombat.gui.animation import ANIMATION_CRAWL
-from opencombat.gui.animation import ANIMATION_WALK
 from synergine2_cocos2d.animation import Animate
 from synergine2_cocos2d.gl import draw_line
 from synergine2_cocos2d.gui import EditLayer as BaseEditLayer
@@ -268,9 +266,10 @@ class Game(TMXGui):
         self,
         event: typing.Union[move.SubjectFinishMoveEvent, move.SubjectFinishTileMoveEvent]
     ):
-        # FIXME NOW: adapt to new events
         actor = self.layer_manager.subject_layer.subjects_index[event.subject_id]
-        new_world_position = self.layer_manager.grid_manager.get_world_position_of_grid_position(event.to_position)
+        new_world_position = self.layer_manager\
+            .grid_manager\
+            .get_world_position_of_grid_position(event.move_to)
 
         actor.stop_actions((BaseMoveTo,))
         actor.set_position(*new_world_position)
@@ -279,32 +278,21 @@ class Game(TMXGui):
         self,
         event: typing.Union[move.SubjectFinishTileMoveEvent, move.SubjectContinueTileMoveEvent, move.SubjectFinishMoveEvent],  # nopep8
     ):
-        # FIXME NOW: adapt to new events
         actor = self.layer_manager.subject_layer.subjects_index[event.subject_id]
-        new_world_position = self.layer_manager.grid_manager.get_world_position_of_grid_position(event.to_position)
-        actor_mode = actor.get_mode_for_gui_action(event.gui_action)
+        new_world_position = self.layer_manager\
+            .grid_manager\
+            .get_world_position_of_grid_position(event.move_to)
 
-        # FIXME: move duration must depend tile type
-        if event.gui_action == UserAction.ORDER_MOVE:
-            animation = ANIMATION_WALK
-            cycle_duration = 2
-        elif event.gui_action == UserAction.ORDER_MOVE_FAST:
-            animation = ANIMATION_WALK
-            cycle_duration = 0.5
-        elif event.gui_action == UserAction.ORDER_MOVE_CRAWL:
-            animation = ANIMATION_CRAWL
-            cycle_duration = 2
-        else:
-            raise NotImplementedError(
-                'Gui action {} unknown'.format(event.gui_action)
-            )
+        animation = event.gui_action
+        # FIXME: cycle duration != move_duration ?
+        cycle_duration = event.duration
 
-        move_duration = event.move_duration
+        move_duration = event.duration
         move_action = MoveTo(new_world_position, move_duration)
         actor.do(move_action)
-        actor.do(Animate(animation, duration=move_duration, cycle_duration=cycle_duration))
-        actor.rotation = get_angle(event.from_position, event.to_position)
-        actor.mode = actor_mode
+        actor.do(Animate(animation, duration=move_duration, cycle_duration=0.1))
+        actor.rotation = get_angle(actor.subject.position, event.move_to)
+        actor.mode = actor.get_mode_for_gui_action(animation)
 
     def new_visible_opponent(self, event: NewVisibleOpponent):
         self.visible_or_no_longer_visible_opponent(event, (153, 0, 153))

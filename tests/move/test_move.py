@@ -230,11 +230,9 @@ def test_move_and_rotate_behaviour__begin_move(config):
         position=(0, 0),
     )
     move = MoveToIntention(
-        gui_action=UserAction.ORDER_MOVE,
         from_=(0, 0),
-        move_to=(1, 1),
-        # FIXME: When new move algo, remove this parameter
-        start_time=0,
+        to=(1, 1),
+        gui_action=UserAction.ORDER_MOVE,
     )
     subject.intentions.set(move)
 
@@ -389,11 +387,9 @@ def test_move_behaviour(config):
         position=(0, 0),
     )
     move = MoveToIntention(
-        gui_action=UserAction.ORDER_MOVE,
         from_=(0, 0),
-        move_to=(1, 1),
-        # FIXME: When new move algo, remove this parameter
-        start_time=0,
+        to=(1, 1),
+        gui_action=UserAction.ORDER_MOVE,
     )
     subject.intentions.set(move)
 

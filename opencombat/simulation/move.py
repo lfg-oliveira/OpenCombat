@@ -8,72 +8,115 @@ from synergine2_xyz.move.intention import MoveToIntention
 from synergine2_xyz.simulation import XYZSimulation
 from synergine2_xyz.utils import get_angle
 
+from opencombat.user_action import UserAction
+
 
 class SubjectStartRotationEvent(Event):
     def __init__(
         self,
+        subject_id: int,
         rotate_relative: float,
         duration: float,
+        gui_action: UserAction,
     ) -> None:
+        self.subject_id = subject_id
         self.rotate_relative = rotate_relative
         self.duration = duration
+        self.gui_action = gui_action
 
 
 class SubjectContinueRotationEvent(Event):
     def __init__(
         self,
+        subject_id: int,
         rotate_relative: float,
         duration: float,
+        gui_action: UserAction,
     ) -> None:
+        self.subject_id = subject_id
         self.rotate_relative = rotate_relative
         self.duration = duration
+        self.gui_action = gui_action
 
 
 class SubjectFinishRotationEvent(Event):
     def __init__(
         self,
+        subject_id: int,
         rotation_absolute: float,
+        gui_action: UserAction,
     ) -> None:
+        self.subject_id = subject_id
         self.rotation_absolute = rotation_absolute
+        self.gui_action = gui_action
 
 
 class SubjectStartTileMoveEvent(Event):
     def __init__(
         self,
+        subject_id: int,
         move_to: typing.Tuple[int, int],
         duration: float,
+        gui_action: UserAction,
     ) -> None:
+        self.subject_id = subject_id
         self.move_to = move_to
         self.duration = duration
+        self.gui_action = gui_action
 
 
 class SubjectContinueTileMoveEvent(Event):
     def __init__(
         self,
+        subject_id: int,
         move_to: typing.Tuple[int, int],
         duration: float,
+        gui_action: UserAction,
     ) -> None:
+        self.subject_id = subject_id
         self.move_to = move_to
         self.duration = duration
+        self.gui_action = gui_action
 
 
 class SubjectFinishTileMoveEvent(Event):
     def __init__(
         self,
+        subject_id: int,
         move_to: typing.Tuple[int, int],
+        gui_action: UserAction,
     ) -> None:
+        self.subject_id = subject_id
         self.move_to = move_to
+        self.gui_action = gui_action
 
 
 class SubjectFinishMoveEvent(Event):
     def __init__(
         self,
+        subject_id: int,
         move_to: typing.Tuple[int, int],
+        gui_action: UserAction,
     ) -> None:
+        self.subject_id = subject_id
         self.move_to = move_to
+        self.gui_action = gui_action
+
+
+class MoveToMechanism(SubjectMechanism):
+    def run(self) -> dict:
+        try:
+            # TODO: MoveToIntention doit être configurable
+            move = self.subject.intentions.get(MoveToIntention)  # type: MoveToIntention
+        except KeyError:
+            return {}
+
+        return move.get_data()
 
 
 class MoveWithRotationBehaviour(SubjectBehaviour):
+    use = [MoveToMechanism]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.simulation = typing.cast(XYZSimulation, self.simulation)
@@ -114,6 +157,7 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
         if path_index == len(path) - 1:
             return {
                 'move_to_finished': to,
+                'gui_action': data['gui_action'],
             }
 
         # Check if moving
@@ -122,6 +166,7 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 # Let moving
                 return {
                     'tile_move_to': next_position,
+                    'gui_action': data['gui_action'],
                 }
             return_data['tile_move_to_finished'] = self.subject.moving_to
             # Must consider new position of subject
@@ -129,6 +174,7 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
             if path_index == len(path) - 1:
                 return {
                     'move_to_finished': to,
+                    'gui_action': data['gui_action'],
                 }
             next_position = path[path_index + 1]
             next_position_direction = get_angle(
@@ -145,6 +191,7 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 return {
                     'rotate_relative': rotate_relative,
                     'rotate_absolute': next_position_direction,
+                    'gui_action': data['gui_action'],
                 }
             # rotation finish
             return_data['rotate_to_finished'] = self.subject.rotate_to
@@ -155,11 +202,13 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
             return_data.update({
                 'rotate_relative': rotate_relative,
                 'rotate_absolute': next_position_direction,
+                'gui_action': data['gui_action'],
             })
             return return_data
 
         # Need to move to next tile
         return_data['tile_move_to'] = next_position
+        return_data['gui_action'] = data['gui_action']
         return return_data
 
     def action(self, data) -> [Event]:
@@ -177,7 +226,9 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
             self.subject.start_move = -1
             self.subject.move_duration = -1
             events.append(SubjectFinishTileMoveEvent(
+                subject_id=self.subject.id,
                 move_to=data['tile_move_to_finished'],
+                gui_action=data['gui_action'],
             ))
 
         if data.get('move_to_finished'):
@@ -187,7 +238,9 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
             self.subject.move_duration = -1
             self.subject.intentions.remove(MoveToIntention)
             events.append(SubjectFinishMoveEvent(
+                subject_id=self.subject.id,
                 move_to=data['move_to_finished'],
+                gui_action=data['gui_action'],
             ))
 
         if data.get('rotate_to_finished'):
@@ -197,7 +250,9 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
             self.subject.direction = data['rotate_to_finished']
 
             events.append(SubjectFinishRotationEvent(
+                subject_id=self.subject.id,
                 rotation_absolute=data['rotate_to_finished'],
+                gui_action=data['gui_action'],
             ))
 
         if data.get('rotate_relative'):
@@ -215,8 +270,10 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 self.subject.start_rotation = now
 
                 return [SubjectContinueRotationEvent(
+                    subject_id=self.subject.id,
                     rotate_relative=rotation_left,
                     duration=duration,
+                    gui_action=data['gui_action'],
                 )]
             else:
                 duration = self.subject.get_rotate_duration(angle=data['rotate_relative'])
@@ -225,8 +282,10 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 self.subject.start_rotation = time.time()
 
                 events.append(SubjectStartRotationEvent(
+                    subject_id=self.subject.id,
                     rotate_relative=data['rotate_relative'],
                     duration=duration,
+                    gui_action=data['gui_action'],
                 ))
 
         if data.get('tile_move_to'):
@@ -240,8 +299,10 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 self.subject.move_duration = duration
 
                 return [SubjectContinueTileMoveEvent(
+                    subject_id=self.subject.id,
                     move_to=data['tile_move_to'],
                     duration=duration,
+                    gui_action=data['gui_action'],
                 )]
             else:
                 move = self.subject.intentions.get(MoveToIntention)
@@ -253,14 +314,18 @@ class MoveWithRotationBehaviour(SubjectBehaviour):
                 self.subject.move_duration = duration
                 self.subject.start_move = time.time()
                 events.append(SubjectStartTileMoveEvent(
+                    subject_id=self.subject.id,
                     move_to=data['tile_move_to'],
                     duration=duration,
+                    gui_action=data['gui_action'],
                 ))
 
         return events
 
 
 class MoveBehaviour(SubjectBehaviour):
+    use = [MoveToMechanism]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.simulation = typing.cast(XYZSimulation, self.simulation)
@@ -273,7 +338,6 @@ class MoveBehaviour(SubjectBehaviour):
             return False
 
         # Prepare data
-        from_ = data['from']  # type: typing.Tuple(int, int)
         to = data['to']  # type: typing.Tuple(int, int)
         return_data = {}
         now = time.time()
@@ -299,6 +363,7 @@ class MoveBehaviour(SubjectBehaviour):
         if path_index == len(path) - 1:
             return {
                 'move_to_finished': to,
+                'gui_action': data['gui_action'],
             }
 
         # Check if moving
@@ -307,6 +372,7 @@ class MoveBehaviour(SubjectBehaviour):
                 # Let moving
                 return {
                     'tile_move_to': next_position,
+                    'gui_action': data['gui_action'],
                 }
             return_data['tile_move_to_finished'] = self.subject.moving_to
             # Must consider new position of subject
@@ -314,11 +380,13 @@ class MoveBehaviour(SubjectBehaviour):
             if path_index == len(path) - 1:
                 return {
                     'move_to_finished': to,
+                    'gui_action': data['gui_action'],
                 }
             next_position = path[path_index + 1]
 
         # Need to move to next tile
         return_data['tile_move_to'] = next_position
+        return_data['gui_action'] = data['gui_action']
         return return_data
 
     def action(self, data) -> [Event]:
@@ -336,7 +404,9 @@ class MoveBehaviour(SubjectBehaviour):
             self.subject.start_move = -1
             self.subject.move_duration = -1
             events.append(SubjectFinishTileMoveEvent(
+                subject_id=self.subject.id,
                 move_to=data['tile_move_to_finished'],
+                gui_action=data['gui_action'],
             ))
 
         if data.get('move_to_finished'):
@@ -346,7 +416,9 @@ class MoveBehaviour(SubjectBehaviour):
             self.subject.move_duration = -1
             self.subject.intentions.remove(MoveToIntention)
             events.append(SubjectFinishMoveEvent(
+                subject_id=self.subject.id,
                 move_to=data['move_to_finished'],
+                gui_action=data['gui_action'],
             ))
 
         if data.get('tile_move_to'):
@@ -361,8 +433,10 @@ class MoveBehaviour(SubjectBehaviour):
                 self.subject.start_move = time.time()
 
                 return [SubjectContinueTileMoveEvent(
+                    subject_id=self.subject.id,
                     move_to=data['tile_move_to'],
                     duration=duration,
+                    gui_action=data['gui_action'],
                 )]
             else:
                 move = self.subject.intentions.get(MoveToIntention)
@@ -374,19 +448,10 @@ class MoveBehaviour(SubjectBehaviour):
                 self.subject.move_duration = duration
                 self.subject.start_move = time.time()
                 events.append(SubjectStartTileMoveEvent(
+                    subject_id=self.subject.id,
                     move_to=data['tile_move_to'],
                     duration=duration,
+                    gui_action=data['gui_action'],
                 ))
 
         return events
-
-
-class MoveToMechanism(SubjectMechanism):
-    def run(self) -> dict:
-        try:
-            # TODO: MoveToIntention doit être configurable
-            move = self.subject.intentions.get(MoveToIntention)  # type: MoveToIntention
-        except KeyError:
-            return {}
-
-        return move.get_data()
