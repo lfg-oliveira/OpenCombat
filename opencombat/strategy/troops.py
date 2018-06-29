@@ -53,7 +53,7 @@ class Troop(object):
 
         # Parse team, build Subjects
         subjects = []  # type: typing.List[TileSubject]
-        for troop in self._state_root.findall('troop'):
+        for i, troop in enumerate(self._state_root.findall('troop')):
             country = troop.attrib['country']
             team_id = troop.attrib['team_id']
             team = team_stash.get_team(team_id, country)
@@ -65,6 +65,7 @@ class Troop(object):
                         country,
                     )
                 subject.properties.update(properties)
+                subject.group_id = i
                 subjects.append(subject)
 
         return subjects

@@ -14,6 +14,7 @@ from opencombat.simulation.move import MoveWithRotationBehaviour
 from opencombat.simulation.behaviour import EngageOpponent
 from opencombat.simulation.behaviour import LookAroundBehaviour
 from synergine2.share import shared
+from synergine2.share import SubjectListIndex
 
 
 class TileBehaviourSelector(SubjectBehaviourSelector):
@@ -40,6 +41,10 @@ class TileSubject(BaseSubject):
     rotate_to = shared.create_self('rotate_to', -1)
     rotate_duration = shared.create_self('rotate_duration', -1)
     start_rotation = shared.create_self('start_rotation', -1)
+
+    group_id = shared.create_self('group_id', -1, indexes=[
+        SubjectListIndex(shared, 'group_{shared_key}'),
+    ])
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
