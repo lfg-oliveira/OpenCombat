@@ -79,6 +79,10 @@ class TileSubject(BaseSubject):
         """
         return self._crawl_ref_time * self.global_move_coeff
 
+    @property
+    def teammate_ids(self) -> typing.List[int]:
+        return shared.get('group_{}'.format(self.group_id))
+
     def get_rotate_duration(self, angle: float) -> float:
         return angle * self._rotate_ref_time
 
