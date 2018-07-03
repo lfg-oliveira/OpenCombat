@@ -70,6 +70,9 @@ class State(object):
         subject.direction = float(
             get_text_xml_element(subject_element, 'direction'),
         )
+        subject.group_id = float(
+            get_text_xml_element(subject_element, 'group_id'),
+        )
         # TODO BS 2018-06-20: Maybe need apply this mode no ?
         subject.combat_mode = \
             get_text_xml_element(subject_element, 'combat_mode')
@@ -157,6 +160,9 @@ class StateDumper(object):
 
             direction_element = etree.SubElement(subject_element, 'direction')
             direction_element.text = str(subject.direction)
+
+            group_element = etree.SubElement(subject_element, 'group_id')
+            group_element.text = str(subject.group_id)
 
             combat_mode_element = etree.SubElement(
                 subject_element,
