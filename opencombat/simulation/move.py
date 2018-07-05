@@ -2,6 +2,8 @@
 import time
 import typing
 
+from synergine2.config import Config
+from synergine2.log import get_logger
 from synergine2.simulation import SubjectBehaviour
 from synergine2.simulation import SubjectMechanism
 from synergine2.simulation import Event
@@ -12,7 +14,11 @@ from synergine2.simulation import disable_when
 from synergine2.simulation import config_value
 
 from opencombat.const import COLLECTION_ALIVE
+from opencombat.simulation.base import TileStrategySimulation
 from opencombat.user_action import UserAction
+
+if typing.TYPE_CHECKING:
+    from opencombat.simulation.subject import TileSubject
 
 
 class SubjectStartRotationEvent(Event):
@@ -473,3 +479,29 @@ class MoveBehaviour(SubjectBehaviour):
                 ))
 
         return events
+
+
+class TeamPlacer(object):
+    def __init__(
+        self,
+        config: Config,
+        simulation: TileStrategySimulation,
+    ) -> None:
+        self._config = config
+        self._logger = get_logger('TeamPlacer', config)
+        self._simulation = simulation
+
+    def get_positions(
+        self,
+        subjects: typing.List['TileSubject'],
+        to_position: typing.Tuple[int, int],
+    ) -> typing.List[typing.Tuple['TileSubject', typing.Tuple[int, int]]]:
+        subject_positions = []  # type: typing.List[typing.Tuple['TileSubject', typing.Tuple[int, int]]]  # nopep8
+
+        # TODO BS 2018-07-06: Ugly algorithm for now
+        for i, subject in enumerate(subjects):
+            subject_positions.append(
+                (subject, (to_position[0], to_position[1] + i)),
+            )
+
+        return subject_positions

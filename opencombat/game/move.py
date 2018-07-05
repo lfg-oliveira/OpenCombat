@@ -1,12 +1,54 @@
 # coding: utf-8
 import typing
 
+from synergine2.config import Config
 from synergine2_cocos2d.interaction import BaseActorInteraction
-from opencombat.user_action import UserAction
 from synergine2.simulation import SimulationBehaviour
+from synergine2.simulation import Simulation
+from synergine2.simulation import Event
 from synergine2_cocos2d.actor import Actor
 from synergine2_cocos2d.gl import draw_line
-from synergine2_xyz.move.simulation import RequestMoveBehaviour
+from synergine2_xyz.move.simulation import RequestMoveBehaviour as BaseRequestMoveBehaviour  # nopep8
+
+from opencombat.simulation.move import TeamPlacer
+from opencombat.user_action import UserAction
+
+
+class RequestMoveBehaviour(BaseRequestMoveBehaviour):
+    def __init__(
+        self,
+        config: Config,
+        simulation: Simulation,
+    ):
+        super().__init__(config, simulation)
+        self._team_placer = TeamPlacer(config, self.simulation)
+
+    def action(self, data) -> typing.List[Event]:
+        subject_id = data['subject_id']
+        move_to = data['move_to']
+
+        try:
+            subject = self.simulation.subjects.index[subject_id]
+            teammates = [
+                self.simulation.subjects.index[teammate_id]
+                for teammate_id in subject.teammate_ids
+            ]
+            subjects = teammates + [subject]
+            subject_positions = self._team_placer.get_positions(
+                subjects,
+                move_to,
+            )
+
+            for subject, to_position in subject_positions:
+                subject.intentions.set(self.move_intention_class(
+                    to_position,
+                    gui_action=data['gui_action'],
+                ))
+        except KeyError:
+            # TODO: log error here
+            pass
+
+        return []
 
 
 class BaseMoveActorInteraction(BaseActorInteraction):
