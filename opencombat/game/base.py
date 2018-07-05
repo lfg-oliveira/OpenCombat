@@ -14,10 +14,12 @@ from pyglet.window import key
 from cocos.actions import MoveTo as BaseMoveTo
 from cocos.actions import RotateTo
 from synergine2_cocos2d.audio import AudioLibrary as BaseAudioLibrary
+from synergine2_cocos2d.const import DEFAULT_SELECTION_COLOR_RGB
 from synergine2_cocos2d.interaction import InteractionManager
 from synergine2_cocos2d.middleware import MapMiddleware
 from synergine2_cocos2d.util import PathManager
 
+from opencombat.const import SELECTION_COLOR_RGB
 from opencombat.game.animation import ANIMATION_WALK
 from opencombat.game.animation import ANIMATION_CRAWL
 from opencombat.game.fire import GuiFiringEvent
@@ -31,6 +33,7 @@ from synergine2.terminals import Terminal
 from synergine2_cocos2d.actions import MoveTo
 from synergine2_cocos2d.animation import Animate
 from synergine2_cocos2d.gl import draw_line
+from synergine2_cocos2d.gl import draw_rectangle
 from synergine2_cocos2d.gui import EditLayer as BaseEditLayer
 from synergine2_cocos2d.gui import SubjectMapper
 from synergine2_cocos2d.gui import Gui
@@ -47,6 +50,7 @@ from opencombat.simulation.subject import ManSubject
 from opencombat.simulation.subject import TankSubject
 from opencombat.game.actor import Man as ManActor
 from opencombat.game.actor import HeavyVehicle as HeavyVehicleActor
+from opencombat.util import decrease_rgb
 
 
 class EditLayer(BaseEditLayer):
@@ -88,6 +92,36 @@ class EditLayer(BaseEditLayer):
                 UserAction.SET_SUBJECTS_POSITION,
             )
         interaction.execute()
+
+    def draw_selection(self) -> None:
+        super().draw_selection()
+
+        # Also draw "selection" on teammates
+        selected_subject_ids = [
+            actor.subject.id
+            for actor in self.selection.keys()
+        ]
+        for actor, cshape in self.selection.items():
+            teammeate_subject_ids = actor.subject.teammate_ids
+            unselected_teammeates = (
+                self.layer_manager.subject_layer.subjects_index[teammate_id]
+                for teammate_id in teammeate_subject_ids
+                if teammate_id not in selected_subject_ids
+            )
+
+            for teammeate in unselected_teammeates:
+                grid_position = self.grid_manager.get_grid_position(teammeate.position)
+                rect_positions = self.grid_manager.get_rectangle_positions(grid_position)
+                selection_color = teammeate.subject.properties.get(
+                    SELECTION_COLOR_RGB,
+                    self.config.get(DEFAULT_SELECTION_COLOR_RGB, (0, 81, 211))
+                )
+                selection_color = decrease_rgb(selection_color, 75)
+
+                draw_rectangle(
+                    self.layer_manager.scrolling_manager.world_to_screen_positions(rect_positions),
+                    selection_color,
+                )
 
 
 class BackgroundLayer(cocos.layer.Layer):

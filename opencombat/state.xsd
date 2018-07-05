@@ -56,11 +56,12 @@
 
     <xs:complexType name="subjecttype">
         <xs:sequence>
-            <xs:element name="type" type="xs:string" minOccurs="1" />
-            <xs:element name="position" type="positiontype" minOccurs="1"/>
-            <xs:element name="direction" type="directiontype" minOccurs="1"/>
-            <xs:element name="combat_mode" type="combatmodetype" minOccurs="1"/>
-            <xs:element name="properties" type="propertiestype" minOccurs="1"/>
+            <xs:element name="type" type="xs:string"/>
+            <xs:element name="position" type="positiontype"/>
+            <xs:element name="direction" type="directiontype"/>
+            <xs:element name="group_id" type="xs:integer"/>
+            <xs:element name="combat_mode" type="combatmodetype"/>
+            <xs:element name="properties" type="propertiestype"/>
         </xs:sequence>
     </xs:complexType>
 

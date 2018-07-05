@@ -144,6 +144,7 @@ def test_state__ok__dump(
             <type>opencombat.simulation.subject.ManSubject</type>
             <position>10,11</position>
             <direction>42</direction>
+            <group_id>-1</group_id>
             <combat_mode>COMBAT_MODE_DEFEND</combat_mode>
             <properties>
                 <item>
@@ -164,6 +165,7 @@ def test_state__ok__dump(
             <type>opencombat.simulation.subject.ManSubject</type>
             <position>16,8</position>
             <direction>197</direction>
+            <group_id>-1</group_id>
             <combat_mode>COMBAT_MODE_DEFEND</combat_mode>
             <properties>
                 <item>
@@ -182,6 +184,7 @@ def test_state__ok__dump(
         </subject>
     </subjects>
 </state>""" == state_xml_str
+
 
 def test_state__ok__dump_and_load(
     config: Config,

@@ -8,6 +8,7 @@
             <type>opencombat.simulation.subject.ManSubject</type>
             <position>1,1</position>
             <direction>90</direction>
+            <group_id>-1</group_id>
             <combat_mode>COMBAT_MODE_DEFEND</combat_mode>
             <properties>
                 <item>
@@ -28,6 +29,7 @@
             <type>opencombat.simulation.subject.ManSubject</type>
             <position>10,10</position>
             <direction>270</direction>
+            <group_id>-1</group_id>
             <combat_mode>COMBAT_MODE_HIDE</combat_mode>
             <properties>
                 <item>

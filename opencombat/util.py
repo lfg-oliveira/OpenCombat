@@ -1,5 +1,6 @@
 # coding: utf-8
 import importlib
+import typing
 
 from _elementtree import Element
 import xml.dom.minidom as md
@@ -55,3 +56,43 @@ def pretty_xml(xml_str):
         md.parse(StringIO(xml_str)).toprettyxml(indent=indent).split('\n')
         if line.strip()
     )
+
+
+def increase_rgb(
+    rgb: typing.Tuple[int, int, int],
+    increase_value: int,
+) -> typing.Tuple[int, int, int]:
+    a = rgb[0] + increase_value
+    b = rgb[1] + increase_value
+    c = rgb[2] + increase_value
+
+    if a > 255:
+        a = 255
+
+    if b > 255:
+        b = 255
+
+    if c > 255:
+        c = 255
+
+    return (a, b, c)
+
+
+def decrease_rgb(
+    rgb: typing.Tuple[int, int, int],
+    increase_value: int,
+) -> typing.Tuple[int, int, int]:
+    a = rgb[0] - increase_value
+    b = rgb[1] - increase_value
+    c = rgb[2] - increase_value
+
+    if a < 0:
+        a = 0
+
+    if b < 0:
+        b = 0
+
+    if c < 0:
+        c = 0
+
+    return (a, b, c)

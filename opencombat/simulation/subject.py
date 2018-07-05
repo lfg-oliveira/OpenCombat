@@ -81,7 +81,11 @@ class TileSubject(BaseSubject):
 
     @property
     def teammate_ids(self) -> typing.List[int]:
-        return shared.get('group_{}'.format(self.group_id))
+        return [
+            subject_id
+            for subject_id in shared.get('group_{}'.format(self.group_id))
+            if subject_id != self.id
+        ]
 
     def get_rotate_duration(self, angle: float) -> float:
         return angle * self._rotate_ref_time
