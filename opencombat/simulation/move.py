@@ -1,6 +1,7 @@
 # coding: utf-8
 import time
 import typing
+import random
 
 from synergine2.config import Config
 from synergine2.log import get_logger
@@ -10,6 +11,7 @@ from synergine2.simulation import Event
 from synergine2_xyz.move.intention import MoveToIntention
 from synergine2_xyz.simulation import XYZSimulation
 from synergine2_xyz.utils import get_angle
+from synergine2_xyz.utils import get_around_positions_of
 from synergine2.simulation import disable_when
 from synergine2.simulation import config_value
 
@@ -498,10 +500,40 @@ class TeamPlacer(object):
     ) -> typing.List[typing.Tuple['TileSubject', typing.Tuple[int, int]]]:
         subject_positions = []  # type: typing.List[typing.Tuple['TileSubject', typing.Tuple[int, int]]]  # nopep8
 
-        # TODO BS 2018-07-06: Ugly algorithm for now
-        for i, subject in enumerate(subjects):
+        positions_around = get_around_positions_of(
+            (to_position[0], to_position[1], 0),
+            distance=3,
+            exclude_start_point=False,
+        )
+        # TODO BS 2018-07-10: Seems to have no effect ? Goal is to randomize
+        # choice of positions
+        randomized_positions_around = sorted(
+            positions_around,
+            key=lambda x: random.random(),
+        )
+
+        # TODO BS 2018-07-10: replace str by constants
+        opacity_for_positions = \
+            self._simulation.physics.matrixes.get_values_for_path_as_dict(
+                name='visibility',
+                path_positions=list(map(
+                    lambda p: (p[0], p[1]),
+                    randomized_positions_around,
+                )),
+                value_name='opacity',
+            )
+
+        opacities = []
+        for x, y_and_more in opacity_for_positions.items():
+            for y, opacity in y_and_more.items():
+                opacities.append(((x, y), opacity))
+
+        sorted_opacities = sorted(opacities, key=lambda o: o[1], reverse=True)
+        for pos_and_opacity, subject in zip(sorted_opacities, subjects):
+            # TODO BS 2018-07-10: Must choice position near the position,
+            # like near start move point / original position
             subject_positions.append(
-                (subject, (to_position[0], to_position[1] + i)),
+                (subject, (pos_and_opacity[0][0], pos_and_opacity[0][1])),
             )
 
         return subject_positions
