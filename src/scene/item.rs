@@ -111,8 +111,9 @@ impl SceneItem {
         // Here some logical about state, nature (soldier, tank, ...) and current behavior to
         // determine sprite type
         match self.state.current_behavior {
-            ItemBehavior::CrawlingTo(_) => SpriteType::CrawlingSoldier,
-            ItemBehavior::WalkingTo(_) => SpriteType::WalkingSoldier,
+            ItemBehavior::HideTo(_) => SpriteType::CrawlingSoldier,
+            ItemBehavior::MoveTo(_) => SpriteType::WalkingSoldier,
+            ItemBehavior::MoveFastTo(_) => SpriteType::WalkingSoldier,
             ItemBehavior::Standing => SpriteType::StandingSoldier,
         }
     }

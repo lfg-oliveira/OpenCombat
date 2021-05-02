@@ -23,6 +23,8 @@ pub enum UserEvent {
 
 pub enum SceneItemPrepareOrder {
     Move(usize), // scene_item usize
+    MoveFast(usize), // scene_item usize
+    Hide(usize), // scene_item usize
 }
 
 #[derive(Clone)]

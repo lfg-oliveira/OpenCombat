@@ -13,6 +13,12 @@ pub fn digest_next_order(scene_item: &SceneItem) -> Vec<SceneItemModifier> {
             Order::MoveTo(_) => {
                 scene_item_modifiers.push(SceneItemModifier::SwitchToCurrentOrder);
             }
+            Order::MoveFastTo(_) => {
+                scene_item_modifiers.push(SceneItemModifier::SwitchToCurrentOrder)
+            }
+            Order::HideTo(_) => {
+                scene_item_modifiers.push(SceneItemModifier::SwitchToCurrentOrder)
+            }
         }
     }
 
@@ -26,10 +32,21 @@ pub fn digest_current_order(scene_item: &SceneItem) -> Vec<SceneItemModifier> {
     if let Some(current_order) = &scene_item.current_order {
         match current_order {
             Order::MoveTo(move_to_scene_point) => {
+                // FIXME BS NOW: Change order only if it is not the current order
                 scene_item_modifiers.push(SceneItemModifier::ChangeState(ItemState::new(
-                    ItemBehavior::WalkingTo(*move_to_scene_point),
+                    ItemBehavior::MoveTo(*move_to_scene_point),
                 )))
             }
+            Order::MoveFastTo(move_to_scene_point) => {
+                // FIXME BS NOW: Change order only if it is not the current order
+                scene_item_modifiers.push(SceneItemModifier::ChangeState(ItemState::new(
+                    ItemBehavior::MoveFastTo(*move_to_scene_point),
+                )))}
+            Order::HideTo(move_to_scene_point) => {
+                // FIXME BS NOW: Change order only if it is not the current order
+                scene_item_modifiers.push(SceneItemModifier::ChangeState(ItemState::new(
+                    ItemBehavior::HideTo(*move_to_scene_point),
+                )))}
         }
     }
 
@@ -41,8 +58,8 @@ pub fn digest_current_behavior(scene_item: &SceneItem) -> Vec<SceneItemModifier>
 
     match scene_item.state.current_behavior {
         ItemBehavior::Standing => {}
-        ItemBehavior::WalkingTo(going_to_scene_point)
-        | ItemBehavior::CrawlingTo(going_to_scene_point) => {
+        ItemBehavior::MoveTo(going_to_scene_point)
+        | ItemBehavior::HideTo(going_to_scene_point) => {
             // Note: angle computed by adding FRAC_PI_2 because sprites are north oriented
             scene_item_modifiers.push(SceneItemModifier::ChangeDisplayAngle(
                 f32::atan2(

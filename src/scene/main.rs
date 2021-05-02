@@ -174,12 +174,18 @@ impl MainState {
         }
 
         if let Some(scene_item_prepare_order) = &self.scene_item_prepare_order {
-            // TODO: Add order to scene_item
             match scene_item_prepare_order {
                 SceneItemPrepareOrder::Move(scene_item_usize) => {
                     let mut scene_item = self.get_scene_item_mut(*scene_item_usize);
                     scene_item.next_order = Some(Order::MoveTo(scene_click_point));
                 }
+                SceneItemPrepareOrder::MoveFast(scene_item_usize) => {
+                    let mut scene_item = self.get_scene_item_mut(*scene_item_usize);
+                    scene_item.next_order = Some(Order::MoveFastTo(scene_click_point));
+                }
+                SceneItemPrepareOrder::Hide(scene_item_usize) => {
+                    let mut scene_item = self.get_scene_item_mut(*scene_item_usize);
+                    scene_item.next_order = Some(Order::HideTo(scene_click_point));}
             }
 
             self.scene_item_prepare_order = None;
@@ -197,8 +203,16 @@ impl MainState {
                             Some(SceneItemPrepareOrder::Move(scene_item_usize));
                         self.scene_item_menu = None;
                     }
-                    MenuItem::MoveFast => {}
-                    MenuItem::Hide => {}
+                    MenuItem::MoveFast => {
+                        self.scene_item_prepare_order =
+                            Some(SceneItemPrepareOrder::MoveFast(scene_item_usize));
+                        self.scene_item_menu = None;
+                    }
+                    MenuItem::Hide => {
+                        self.scene_item_prepare_order =
+                            Some(SceneItemPrepareOrder::Hide(scene_item_usize));
+                        self.scene_item_menu = None;
+                    }
                 }
             };
             self.scene_item_menu = None;
@@ -241,7 +255,7 @@ impl MainState {
         // Scene items movements
         for scene_item in self.scene_items.iter_mut() {
             match scene_item.state.current_behavior {
-                ItemBehavior::WalkingTo(scene_point) => {
+                ItemBehavior::MoveTo(scene_point) => {
                     // FIXME BS NOW: velocity
                     let move_vector = (scene_point - scene_item.position).normalize() * 1.0;
                     // TODO ici il faut calculer le déplacement réél (en fonction des ticks, etc ...)
