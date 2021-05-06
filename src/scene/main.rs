@@ -17,6 +17,7 @@ use crate::config::{
     MOVE_HIDE_VELOCITY, MOVE_TO_REACHED_WHEN_DISTANCE_INFERIOR_AT, MOVE_VELOCITY, PHYSICS_EACH,
     SCENE_ITEMS_CHANGE_ERR_MSG, SPRITE_EACH, TARGET_FPS,
 };
+use crate::map::{map_from_tmx_file, Map};
 use crate::physics::util::scene_point_from_window_point;
 use crate::physics::util::window_point_from_scene_point;
 use crate::physics::GridPosition;
@@ -29,10 +30,15 @@ use crate::ui::MenuItem;
 use crate::ui::{SceneItemPrepareOrder, UiComponent, UserEvent};
 use crate::util::velocity_for_behavior;
 use crate::{Offset, ScenePoint, WindowPoint};
+use std::fs::File;
+use std::path::Path;
 
 pub struct MainState {
     // time
     frame_i: u32,
+
+    // map
+    map: Map,
 
     // display
     display_offset: Offset,
@@ -59,10 +65,17 @@ pub struct MainState {
 
 impl MainState {
     pub fn new(ctx: &mut Context) -> GameResult<MainState> {
+        let map_file = File::open(&Path::new("resources/map1.tmx"))?;
+        let map = map_from_tmx_file(map_file)?;
+
         let sprite_sheet = graphics::Image::new(ctx, "/sprite_sheet.png").unwrap();
         let sprite_sheet_batch = graphics::spritebatch::SpriteBatch::new(sprite_sheet);
-        let map = graphics::Image::new(ctx, "/map1bg.png").unwrap();
-        let map_batch = graphics::spritebatch::SpriteBatch::new(map);
+        let map_image = graphics::Image::new(
+            ctx,
+            &Path::new(&format!("/{}", &map.background_image.source)),
+        )
+        .unwrap();
+        let map_batch = graphics::spritebatch::SpriteBatch::new(map_image);
         let ui = graphics::Image::new(ctx, "/ui.png").unwrap();
         let ui_batch = graphics::spritebatch::SpriteBatch::new(ui);
 
@@ -85,6 +98,7 @@ impl MainState {
 
         let mut main_state = MainState {
             frame_i: 0,
+            map,
             display_offset: Offset::new(0.0, 0.0),
             sprite_sheet_batch,
             map_batch,
