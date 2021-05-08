@@ -17,7 +17,7 @@ use crate::config::{
     MOVE_HIDE_VELOCITY, MOVE_TO_REACHED_WHEN_DISTANCE_INFERIOR_AT, MOVE_VELOCITY, PHYSICS_EACH,
     SCENE_ITEMS_CHANGE_ERR_MSG, SPRITE_EACH, TARGET_FPS,
 };
-use crate::map::{Map};
+use crate::map::Map;
 use crate::physics::util::scene_point_from_window_point;
 use crate::physics::util::window_point_from_scene_point;
 use crate::physics::GridPosition;
@@ -45,6 +45,7 @@ pub struct MainState {
     sprite_sheet_batch: graphics::spritebatch::SpriteBatch,
     map_batch: graphics::spritebatch::SpriteBatch,
     ui_batch: graphics::spritebatch::SpriteBatch,
+    terrain_batch: graphics::spritebatch::SpriteBatch,
 
     // scene items
     scene_items: Vec<SceneItem>,
@@ -66,16 +67,26 @@ pub struct MainState {
 impl MainState {
     pub fn new(ctx: &mut Context) -> GameResult<MainState> {
         let map = Map::new(&Path::new("resources/map1.tmx"))?;
-        let sprite_sheet = graphics::Image::new(ctx, "/sprite_sheet.png").unwrap();
-        let sprite_sheet_batch = graphics::spritebatch::SpriteBatch::new(sprite_sheet);
+
+        // FIXME manage error
+        let sprite_sheet_image = graphics::Image::new(ctx, "/sprite_sheet.png").unwrap();
+        let sprite_sheet_batch = graphics::spritebatch::SpriteBatch::new(sprite_sheet_image);
+
         let map_image = graphics::Image::new(
             ctx,
             &Path::new(&format!("/{}", &map.background_image.source)),
         )
         .unwrap();
         let map_batch = graphics::spritebatch::SpriteBatch::new(map_image);
-        let ui = graphics::Image::new(ctx, "/ui.png").unwrap();
-        let ui_batch = graphics::spritebatch::SpriteBatch::new(ui);
+
+        // FIXME manage error
+        let ui_image = graphics::Image::new(ctx, "/ui.png").unwrap();
+        let ui_batch = graphics::spritebatch::SpriteBatch::new(ui_image);
+
+        // FIXME manage error
+        let terrain_image =
+            graphics::Image::new(ctx, format!("/{}", map.terrain_image.source)).unwrap();
+        let terrain_batch = graphics::spritebatch::SpriteBatch::new(terrain_image);
 
         let mut scene_items = vec![];
         for x in 0..1 {
@@ -101,6 +112,7 @@ impl MainState {
             sprite_sheet_batch,
             map_batch,
             ui_batch,
+            terrain_batch,
             scene_items,
             scene_items_by_grid_position: HashMap::new(),
             physics_events: vec![],
