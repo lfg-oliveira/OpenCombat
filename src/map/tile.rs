@@ -9,14 +9,14 @@ pub enum TileId {
 }
 
 pub struct Tile {
-    id: TileId,
-    tile_width: u32,
-    tile_height: u32,
-    relative_tile_width: f32,
-    relative_tile_height: f32,
-    tile_x: u32,
-    tile_y: u32,
-    opacity: f32,
+    pub id: TileId,
+    pub tile_width: u32,
+    pub tile_height: u32,
+    pub relative_tile_width: f32,
+    pub relative_tile_height: f32,
+    pub tile_x: u32,
+    pub tile_y: u32,
+    pub opacity: f32,
 }
 
 impl Tile {

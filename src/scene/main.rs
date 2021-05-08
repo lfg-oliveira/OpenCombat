@@ -398,7 +398,26 @@ impl MainState {
 
     fn generate_terrain_sprites(&mut self) -> GameResult {
         if DEBUG {
-            for ((grid_x, grid_y), tile) in self.map.tiles.iter() {}
+            for ((grid_x, grid_y), tile) in self.map.tiles.iter() {
+                // FIXME pre compute these data
+                let src_x = tile.tile_x as f32 * tile.relative_tile_width;
+                let src_y = tile.tile_y as f32 * tile.relative_tile_height;
+                let dest_x = *grid_x as f32 * tile.tile_width as f32;
+                let dest_y = *grid_y as f32 * tile.tile_height as f32;
+                self.terrain_batch.add(
+                    graphics::DrawParam::new()
+                    .src(graphics::Rect::new(
+                        src_x,
+                        src_y,
+                        tile.relative_tile_width,
+                        tile.relative_tile_height,
+                    ))
+                    .dest(ScenePoint::new(
+                        dest_x,
+                        dest_y,
+                    ))
+                );
+            }
         }
 
         Ok(())

@@ -19,8 +19,7 @@ fn get_tile_from_terrain_tileset_with_id(
     terrain_image_height: u32,
 ) -> GameResult<Tile> {
     for tile in terrain_tileset.tiles.iter() {
-        // FIXME why id is -1 ?
-        if tile.id == id - 1 {
+        if tile.id == id - terrain_tileset.first_gid {
             let str_id = match tile.properties.get("ID") {
                 None => {
                     return GameResult::Err(GameError::ResourceLoadError(format!(
@@ -43,8 +42,9 @@ fn get_tile_from_terrain_tileset_with_id(
             let tile_height = terrain_tileset.tile_height;
             let relative_tile_width = tile_width as f32 / terrain_image_width as f32;
             let relative_tile_height = tile_height as f32 / terrain_image_height as f32;
-            let tile_x = 0; // FIXME
-            let tile_y = 0; // FIXME
+            let len_by_width = terrain_image_width / tile_width;
+            let tile_x = tile.id / len_by_width;
+            let tile_y = tile.id  - (tile_x * len_by_width);
 
             return GameResult::Ok(Tile::from_str_id(
                 &str_id,
@@ -152,6 +152,8 @@ impl Map {
                         let tile = get_tile_from_terrain_tileset_with_id(
                             &terrain_tileset,
                             layer_tile.gid,
+                            terrain_image.width as u32,
+                            terrain_image.height as u32,
                         )?;
                         tiles.insert((x as u32, y as u32), tile);
                     }
