@@ -12,7 +12,12 @@ use tiled::{
     PropertyValue, Tile as TiledTile, TiledError, Tileset,
 };
 
-fn get_tile_from_terrain_tileset_with_id(terrain_tileset: &Tileset, id: u32) -> GameResult<Tile> {
+fn get_tile_from_terrain_tileset_with_id(
+    terrain_tileset: &Tileset,
+    id: u32,
+    terrain_image_width: u32,
+    terrain_image_height: u32,
+) -> GameResult<Tile> {
     for tile in terrain_tileset.tiles.iter() {
         // FIXME why id is -1 ?
         if tile.id == id - 1 {
@@ -33,7 +38,23 @@ fn get_tile_from_terrain_tileset_with_id(terrain_tileset: &Tileset, id: u32) -> 
                     }
                 },
             };
-            return GameResult::Ok(Tile::from_str_id(&str_id));
+
+            let tile_width = terrain_tileset.tile_width;
+            let tile_height = terrain_tileset.tile_height;
+            let relative_tile_width = tile_width as f32 / terrain_image_width as f32;
+            let relative_tile_height = tile_height as f32 / terrain_image_height as f32;
+            let tile_x = 0; // FIXME
+            let tile_y = 0; // FIXME
+
+            return GameResult::Ok(Tile::from_str_id(
+                &str_id,
+                tile_width,
+                tile_height,
+                relative_tile_width,
+                relative_tile_height,
+                tile_x,
+                tile_y,
+            ));
         }
     }
 

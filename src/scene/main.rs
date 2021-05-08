@@ -396,6 +396,14 @@ impl MainState {
         Ok(())
     }
 
+    fn generate_terrain_sprites(&mut self) -> GameResult {
+        if DEBUG {
+            for ((grid_x, grid_y), tile) in self.map.tiles.iter() {}
+        }
+
+        Ok(())
+    }
+
     fn update_mesh_builder_with_debug(
         &self,
         mut mesh_builder: MeshBuilder,
@@ -574,24 +582,27 @@ impl event::EventHandler for MainState {
         self.generate_scene_item_sprites()?;
         self.generate_scene_item_menu_sprites()?;
         self.generate_map_sprites()?;
+        self.generate_terrain_sprites()?;
 
         scene_mesh_builder = self.update_mesh_builder_with_debug(scene_mesh_builder)?;
         scene_mesh_builder = self.update_mesh_builder_with_selected_items(scene_mesh_builder)?;
         scene_mesh_builder = self.update_mesh_builder_with_selection_area(scene_mesh_builder)?;
         scene_mesh_builder = self.update_mesh_builder_with_prepare_order(scene_mesh_builder)?;
 
-        let scene_mesh = scene_mesh_builder.build(ctx)?;
+        let scene_mesh = scene_mesh_builder.build(ctx).unwrap();
         let window_draw_param = graphics::DrawParam::new().dest(window_point_from_scene_point(
             &ScenePoint::new(0.0, 0.0),
             &self.display_offset,
         ));
 
         graphics::draw(ctx, &self.map_batch, window_draw_param)?;
+        graphics::draw(ctx, &self.terrain_batch, window_draw_param)?;
         graphics::draw(ctx, &self.sprite_sheet_batch, window_draw_param)?;
         graphics::draw(ctx, &scene_mesh, window_draw_param)?;
         graphics::draw(ctx, &self.ui_batch, window_draw_param)?;
 
         self.sprite_sheet_batch.clear();
+        self.terrain_batch.clear();
         self.map_batch.clear();
         self.ui_batch.clear();
 
