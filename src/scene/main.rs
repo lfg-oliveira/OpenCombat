@@ -398,6 +398,7 @@ impl MainState {
 
     fn generate_terrain_sprites(&mut self) -> GameResult {
         if DEBUG {
+            // FIXME terrain_batch peut etre préparé qu'une fois en fait !
             for ((grid_x, grid_y), tile) in self.map.tiles.iter() {
                 // FIXME pre compute these data
                 let src_x = tile.tile_x as f32 * tile.relative_tile_width;
