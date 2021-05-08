@@ -17,7 +17,7 @@ use crate::config::{
     MOVE_HIDE_VELOCITY, MOVE_TO_REACHED_WHEN_DISTANCE_INFERIOR_AT, MOVE_VELOCITY, PHYSICS_EACH,
     SCENE_ITEMS_CHANGE_ERR_MSG, SPRITE_EACH, TARGET_FPS,
 };
-use crate::map::{map_from_tmx_file, Map};
+use crate::map::{Map};
 use crate::physics::util::scene_point_from_window_point;
 use crate::physics::util::window_point_from_scene_point;
 use crate::physics::GridPosition;
@@ -65,9 +65,7 @@ pub struct MainState {
 
 impl MainState {
     pub fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let map_file = File::open(&Path::new("resources/map1.tmx"))?;
-        let map = map_from_tmx_file(map_file)?;
-
+        let map = Map::new(&Path::new("resources/map1.tmx"))?;
         let sprite_sheet = graphics::Image::new(ctx, "/sprite_sheet.png").unwrap();
         let sprite_sheet_batch = graphics::spritebatch::SpriteBatch::new(sprite_sheet);
         let map_image = graphics::Image::new(
