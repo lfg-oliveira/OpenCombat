@@ -609,7 +609,6 @@ impl event::EventHandler for MainState {
         scene_mesh_builder = self.update_mesh_builder_with_selection_area(scene_mesh_builder)?;
         scene_mesh_builder = self.update_mesh_builder_with_prepare_order(scene_mesh_builder)?;
 
-        let scene_mesh = scene_mesh_builder.build(ctx).unwrap();
         let window_draw_param = graphics::DrawParam::new().dest(window_point_from_scene_point(
             &ScenePoint::new(0.0, 0.0),
             &self.display_offset,
@@ -618,7 +617,9 @@ impl event::EventHandler for MainState {
         graphics::draw(ctx, &self.map_batch, window_draw_param)?;
         graphics::draw(ctx, &self.terrain_batch, window_draw_param)?;
         graphics::draw(ctx, &self.sprite_sheet_batch, window_draw_param)?;
-        graphics::draw(ctx, &scene_mesh, window_draw_param)?;
+        if let Ok(scene_mesh) = scene_mesh_builder.build(ctx) {
+            graphics::draw(ctx, &scene_mesh, window_draw_param)?;
+        }
         graphics::draw(ctx, &self.ui_batch, window_draw_param)?;
 
         self.sprite_sheet_batch.clear();
