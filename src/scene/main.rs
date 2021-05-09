@@ -4,7 +4,7 @@ use std::f32::consts::FRAC_PI_2;
 
 use ggez::event::MouseButton;
 use ggez::graphics::{DrawMode, MeshBuilder, StrokeOptions};
-use ggez::input::keyboard::KeyCode;
+use ggez::input::keyboard::{KeyCode, pressed_keys};
 use ggez::timer::check_update_time;
 use ggez::{event, graphics, input, Context, GameResult};
 
@@ -32,10 +32,12 @@ use crate::util::velocity_for_behavior;
 use crate::{Offset, ScenePoint, WindowPoint};
 use std::fs::File;
 use std::path::Path;
+use std::time::Instant;
 
 pub struct MainState {
     // time
     frame_i: u32,
+    start: Instant,
 
     // map
     map: Map,
@@ -57,6 +59,7 @@ pub struct MainState {
     physics_events: Vec<PhysicEvent>,
 
     // user interactions
+    last_key_consumed: HashMap<KeyCode, Instant>,
     left_click_down: Option<WindowPoint>,
     right_click_down: Option<WindowPoint>,
     current_cursor_position: WindowPoint,
@@ -109,6 +112,7 @@ impl MainState {
 
         let mut main_state = MainState {
             frame_i: 0,
+            start: Instant::now(),
             map,
             debug: false,
             debug_terrain: false,
@@ -120,6 +124,7 @@ impl MainState {
             scene_items,
             scene_items_by_grid_position: HashMap::new(),
             physics_events: vec![],
+            last_key_consumed: HashMap::new(),
             left_click_down: None,
             right_click_down: None,
             current_cursor_position: WindowPoint::new(0.0, 0.0),
@@ -175,10 +180,16 @@ impl MainState {
         }
 
         if input::keyboard::is_key_pressed(ctx, KeyCode::F12) {
-            self.debug = !self.debug;
+            if  self.last_key_consumed.get(&KeyCode::F12).unwrap_or(&self.start).elapsed().as_millis() > 250 {
+                self.debug = !self.debug;
+                self.last_key_consumed.insert(KeyCode::F12, Instant::now());
+            }
         }
         if input::keyboard::is_key_pressed(ctx, KeyCode::F10) {
-            self.debug_terrain = !self.debug_terrain;
+            if  self.last_key_consumed.get(&KeyCode::F10).unwrap_or(&self.start).elapsed().as_millis() > 250 {
+                self.debug_terrain = !self.debug_terrain;
+                self.last_key_consumed.insert(KeyCode::F10, Instant::now());
+            }
         }
 
         while let Some(user_event) = self.user_events.pop() {
