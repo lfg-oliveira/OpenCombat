@@ -12,7 +12,7 @@ use crate::behavior::animate::{digest_current_behavior, digest_current_order, di
 use crate::behavior::order::Order;
 use crate::behavior::ItemBehavior;
 use crate::config::{
-    ANIMATE_EACH, DEBUG, DEFAULT_SELECTED_SQUARE_SIDE, DEFAULT_SELECTED_SQUARE_SIDE_HALF,
+    ANIMATE_EACH, DEFAULT_SELECTED_SQUARE_SIDE, DEFAULT_SELECTED_SQUARE_SIDE_HALF,
     DISPLAY_OFFSET_BY, DISPLAY_OFFSET_BY_SPEED, MAX_FRAME_I, META_EACH, MOVE_FAST_VELOCITY,
     MOVE_HIDE_VELOCITY, MOVE_TO_REACHED_WHEN_DISTANCE_INFERIOR_AT, MOVE_VELOCITY, PHYSICS_EACH,
     SCENE_ITEMS_CHANGE_ERR_MSG, SPRITE_EACH, TARGET_FPS,
@@ -41,6 +41,8 @@ pub struct MainState {
     map: Map,
 
     // display
+    debug: bool,
+    debug_terrain: bool,
     display_offset: Offset,
     sprite_sheet_batch: graphics::spritebatch::SpriteBatch,
     map_batch: graphics::spritebatch::SpriteBatch,
@@ -108,6 +110,8 @@ impl MainState {
         let mut main_state = MainState {
             frame_i: 0,
             map,
+            debug: false,
+            debug_terrain: false,
             display_offset: Offset::new(0.0, 0.0),
             sprite_sheet_batch,
             map_batch,
@@ -168,6 +172,13 @@ impl MainState {
         }
         if input::keyboard::is_key_pressed(ctx, KeyCode::Down) {
             self.display_offset.y -= display_offset_by;
+        }
+
+        if input::keyboard::is_key_pressed(ctx, KeyCode::F12) {
+            self.debug = !self.debug;
+        }
+        if input::keyboard::is_key_pressed(ctx, KeyCode::F10) {
+            self.debug_terrain = !self.debug_terrain;
         }
 
         while let Some(user_event) = self.user_events.pop() {
@@ -397,7 +408,7 @@ impl MainState {
     }
 
     fn generate_terrain_sprites(&mut self) -> GameResult {
-        if DEBUG {
+        if self.debug_terrain {
             // FIXME terrain_batch peut etre préparé qu'une fois en fait !
             for ((grid_x, grid_y), tile) in self.map.tiles.iter() {
                 // FIXME pre compute these data
@@ -428,7 +439,7 @@ impl MainState {
         &self,
         mut mesh_builder: MeshBuilder,
     ) -> GameResult<MeshBuilder> {
-        if DEBUG {
+        if self.debug {
             // Draw circle on each scene item position
             for scene_item in self.scene_items.iter() {
                 mesh_builder.circle(
