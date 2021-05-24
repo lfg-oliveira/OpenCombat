@@ -49,11 +49,12 @@ pub enum MainStateModifier {
     InsertCurrentPrepareMoveFoundPaths(SceneItemId, Vec<GridPoint>),
     NewSeenOpponent(SceneItemId),
     LostSeenOpponent(SceneItemId),
+    PushPhysicEvent(PhysicEvent),
 }
 
 pub struct MainState {
     // time
-    frame_i: u32,
+    frame_i: u32, // FIXME BS NOW: regler le probleme du reset (acquiring_since etc)
     start: Instant,
 
     // map
@@ -655,7 +656,7 @@ impl MainState {
             ));
             messages.extend(apply_scene_item_modifiers(
                 scene_item,
-                digest_behavior(&scene_item, &self.map),
+                digest_behavior(self.frame_i, &scene_item, &self.map),
             ));
         }
 

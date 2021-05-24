@@ -5,11 +5,13 @@ use crate::behavior::ItemBehavior;
 use crate::config::{SCENE_ITEMS_SPRITE_SHEET_HEIGHT, SCENE_ITEMS_SPRITE_SHEET_WIDTH};
 use crate::map::Map;
 use crate::physics::visibility::Visibility;
-use crate::physics::GridPoint;
 use crate::physics::{util, MetaEvent};
+use crate::physics::{GridPoint, HitType, PhysicEvent};
+use crate::scene::main::MainStateModifier;
 use crate::scene::SpriteType;
 use crate::weapon::Weapon;
-use crate::{Message, Offset, ScenePoint};
+use crate::Message::MainStateMessage;
+use crate::{Message, Offset, SceneItemId, ScenePoint};
 
 pub struct SceneItemSpriteInfo {
     pub relative_start_y: f32,
@@ -142,6 +144,23 @@ impl SceneItem {
             ItemBehavior::EngageGridPoint(_) => SpriteType::CrawlingSoldier,
         }
     }
+
+    pub fn visible_visibilities(&self) -> Vec<&Visibility> {
+        self.visibilities
+            .iter()
+            .filter(|v| v.visible)
+            .collect::<Vec<&Visibility>>()
+    }
+
+    pub fn visibility_for(&self, scene_item_id: SceneItemId) -> Option<&Visibility> {
+        for visibility in self.visibilities.iter() {
+            if visibility.to_scene_item_id == scene_item_id {
+                return Some(visibility);
+            }
+        }
+
+        None
+    }
 }
 
 pub enum SceneItemModifier {
@@ -153,6 +172,8 @@ pub enum SceneItemModifier {
     ReachMoveGridPoint,
     ChangeVisibilities(Vec<Visibility>),
     SetNextOrder(Order),
+    BeginAcquire,
+    FireOnSceneItem(SceneItemId, ScenePoint),
 }
 
 pub fn apply_scene_item_modifiers(
@@ -172,6 +193,8 @@ pub fn apply_scene_item_modifier(
     scene_item: &mut SceneItem,
     modifier: SceneItemModifier,
 ) -> Vec<Message> {
+    let mut messages: Vec<Message> = vec![];
+
     match modifier {
         SceneItemModifier::SwitchToNextOrder => {
             if let Some(next_order) = &scene_item.next_order {
@@ -214,6 +237,24 @@ pub fn apply_scene_item_modifier(
         }
         SceneItemModifier::SetNextOrder(order) => {
             scene_item.next_order = Some(order);
+        }
+        SceneItemModifier::BeginAcquire => scene_item.acquiring_since = frame_i,
+        SceneItemModifier::FireOnSceneItem(scene_item_id, scene_point) => {
+            // BAM
+            // Weapon need to reload
+            // Reload
+            scene_item.weapon.need_reload = true;
+            scene_item.reloading_since = frame_i;
+            // FIXME BS NOW: compute hit, and which hit
+            let hit_type = HitType::Deadly;
+            messages.push(Message::MainStateMessage(
+                MainStateModifier::PushPhysicEvent(PhysicEvent::BulletFire(
+                    scene_item.position,
+                    scene_point,
+                    Some(scene_item_id),
+                    hit_type,
+                )),
+            ))
         }
     }
 

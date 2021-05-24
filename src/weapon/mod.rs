@@ -6,10 +6,14 @@ pub enum WeaponType {
 
 pub struct Weapon {
     pub type_: WeaponType,
+    pub need_reload: bool,
 }
 
 impl Weapon {
     pub fn new(type_: WeaponType) -> Self {
-        Self { type_ }
+        Self {
+            type_,
+            need_reload: false,
+        }
     }
 }
