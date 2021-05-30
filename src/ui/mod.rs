@@ -1,4 +1,5 @@
-use crate::WindowPoint;
+use crate::ui::order::OrderMarker;
+use crate::{SceneItemId, WindowPoint};
 use std::time::Duration;
 
 pub mod order;
@@ -19,6 +20,13 @@ pub enum UserEvent {
     RightClick(WindowPoint),
     AreaSelection(WindowPoint, WindowPoint),
     DrawMovePaths,
+    BeginDragOrderMarker(SceneItemId),
+    MoveDrag,
+    ReleaseDrag,
+}
+
+pub enum Dragging {
+    OrderMarker(SceneItemId),
 }
 
 #[derive(Debug, PartialEq)]
